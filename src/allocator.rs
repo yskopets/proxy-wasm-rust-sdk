@@ -15,8 +15,14 @@
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+// Apparently, Rust toolchain doesn't handle well exported name `malloc`
+// when this package is compiled to targets other than `wasm32-unknown-unknown`.
+// Specifically, linking issues have been observed with targets `wasm32-wasi`
+// and `x86_64-unknown-linux-gnu`, which is a blocker for unit testing.
+// Therefore, export name `malloc` only in the context of target `wasm32-unknown-unknown`.
+#[cfg_attr(all(target_arch = "wasm32", target_vendor = "unknown", target_os = "unknown"), export_name = "malloc")]
 #[no_mangle]
-pub extern "C" fn malloc(size: usize) -> *mut u8 {
+pub extern "C" fn proxy_on_memory_allocate(size: usize) -> *mut u8 {
     let mut vec: Vec<u8> = Vec::with_capacity(size);
     unsafe {
         vec.set_len(size);
