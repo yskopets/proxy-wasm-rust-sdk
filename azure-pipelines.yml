@@ -15,7 +15,7 @@ steps:
 
 - script: |
     set -e
-    brew cask install https://raw.githubusercontent.com/Homebrew/homebrew-cask/b8c67034bd78f9585b1316564f223b97055bc0dc/Casks/docker.rb
+    brew cask install https://raw.githubusercontent.com/Homebrew/homebrew-cask/81f73b95e9661e38bab36b33af7a19c15d648a5b/Casks/docker.rb
     sudo /Applications/Docker.app/Contents/MacOS/Docker --quit-after-install --unattended
     /Applications/Docker.app/Contents/MacOS/Docker --unattended &
     while ! docker info 2>/dev/null ; do
