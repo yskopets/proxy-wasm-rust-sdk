@@ -25,6 +25,20 @@ on:
     - '*'
 
 jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - run: |
+          set -e
+          brew cask install https://raw.githubusercontent.com/Homebrew/homebrew-cask/81f73b95e9661e38bab36b33af7a19c15d648a5b/Casks/docker.rb
+          sudo /Applications/Docker.app/Contents/MacOS/Docker --quit-after-install --unattended
+          /Applications/Docker.app/Contents/MacOS/Docker --unattended &
+          while ! docker info 2>/dev/null ; do
+            sleep 5
+            echo "Waiting for docker service to be in the running state"
+          done
+        
+          docker run --rm -t busybox date
 
   stable:
     runs-on: ubuntu-latest
