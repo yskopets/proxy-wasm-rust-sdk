@@ -99,6 +99,12 @@ pub trait Context {
     }
 }
 
+/// Represents a child context of the root context.
+pub enum ChildContext {
+    StreamContext(Box<dyn StreamContext>),
+    HttpContext(Box<dyn HttpContext>),
+}
+
 pub trait RootContext: Context {
     fn on_vm_start(&mut self, _vm_configuration_size: usize) -> bool {
         true
@@ -121,6 +127,12 @@ pub trait RootContext: Context {
     fn on_queue_ready(&mut self, _queue_id: u32) {}
 
     fn on_log(&mut self) {}
+
+    fn on_create_child_context(&mut self, _context_id: u32) -> Option<ChildContext> {
+        // for the sake of compatibility with `set_http_context` and `set_stream_context` API,
+        // root context is not required to create its child context.
+        None
+    }
 }
 
 pub trait StreamContext: Context {

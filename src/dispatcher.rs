@@ -95,6 +95,37 @@ impl Dispatcher {
         }
     }
 
+    /// Lets the root context to create its child context.
+    fn create_child_context(&self, context_id: u32, root_context_id: u32) -> bool {
+        if !self.roots.borrow().contains_key(&root_context_id) {
+            panic!("invalid root_context_id")
+        }
+        if let Some(child_context) = self
+            .roots
+            .borrow_mut()
+            .get_mut(&root_context_id)
+            .and_then(|root| root.on_create_child_context(context_id))
+        {
+            if match child_context {
+                ChildContext::HttpContext(http_context) => self
+                    .http_streams
+                    .borrow_mut()
+                    .insert(context_id, http_context)
+                    .is_some(),
+                ChildContext::StreamContext(stream_context) => self
+                    .streams
+                    .borrow_mut()
+                    .insert(context_id, stream_context)
+                    .is_some(),
+            } {
+                panic!("duplicate context_id")
+            }
+            true
+        } else {
+            false
+        }
+    }
+
     fn create_stream_context(&self, context_id: u32, root_context_id: u32) {
         if !self.roots.borrow().contains_key(&root_context_id) {
             panic!("invalid root_context_id")
@@ -145,6 +176,8 @@ impl Dispatcher {
     fn on_create_context(&self, context_id: u32, root_context_id: u32) {
         if root_context_id == 0 {
             self.create_root_context(context_id)
+        } else if self.create_child_context(context_id, root_context_id) {
+            // root context created a child context by himself
         } else if self.new_http_stream.get().is_some() {
             self.create_http_context(context_id, root_context_id);
         } else if self.new_stream.get().is_some() {
