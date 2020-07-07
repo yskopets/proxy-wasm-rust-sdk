@@ -1,11 +1,11 @@
 [package]
 name = "proxy-wasm-experimental"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 authors = ["Piotr Sikora <piotrsikora@google.com>"]
 description = "WebAssembly for Proxies"
 readme = "README.md"
 license = "Apache-2.0"
-repository = "https://github.com/proxy-wasm/proxy-wasm-rust-sdk"
+repository = "https://github.com/yskopets/proxy-wasm-rust-sdk"
 edition = "2018"
 
 [dependencies]
