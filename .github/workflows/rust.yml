@@ -23,6 +23,7 @@ on:
   push:
     branches:
     - master
+    - proxy-wasm-spec-0.1.0
 
 jobs:
 
