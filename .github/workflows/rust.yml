@@ -75,6 +75,7 @@ jobs:
       run: |
         rustup toolchain install nightly
         rustup target add --toolchain nightly wasm32-unknown-unknown
+        rustup component add --toolchain nightly clippy rustfmt
 
     - name: Build
       env:

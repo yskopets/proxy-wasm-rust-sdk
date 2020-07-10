@@ -20,7 +20,14 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 // Specifically, linking issues have been observed with targets `wasm32-wasi`
 // and `x86_64-unknown-linux-gnu`, which is a blocker for unit testing.
 // Therefore, export name `malloc` only in the context of target `wasm32-unknown-unknown`.
-#[cfg_attr(all(target_arch = "wasm32", target_vendor = "unknown", target_os = "unknown"), export_name = "malloc")]
+#[cfg_attr(
+    all(
+        target_arch = "wasm32",
+        target_vendor = "unknown",
+        target_os = "unknown"
+    ),
+    export_name = "malloc"
+)]
 #[no_mangle]
 pub extern "C" fn proxy_on_memory_allocate(size: usize) -> *mut u8 {
     let mut vec: Vec<u8> = Vec::with_capacity(size);
