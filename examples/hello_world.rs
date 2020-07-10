@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use proxy_wasm_experimental as proxy_wasm;
+
 use chrono::{DateTime, Utc};
 use log::info;
 use proxy_wasm::traits::*;
