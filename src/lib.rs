@@ -24,16 +24,25 @@ pub fn set_log_level(level: types::LogLevel) {
     logger::set_log_level(level);
 }
 
-pub fn set_root_context(callback: types::NewRootContext) {
-    dispatcher::set_root_context(callback);
+pub fn set_root_context<F>(callback: F)
+where
+    F: FnMut(u32) -> Box<dyn traits::RootContext> + 'static,
+{
+    dispatcher::set_root_context(Box::new(callback));
 }
 
-pub fn set_stream_context(callback: types::NewStreamContext) {
-    dispatcher::set_stream_context(callback);
+pub fn set_stream_context<F>(callback: F)
+where
+    F: FnMut(u32, u32) -> Box<dyn traits::StreamContext> + 'static,
+{
+    dispatcher::set_stream_context(Box::new(callback));
 }
 
-pub fn set_http_context(callback: types::NewHttpContext) {
-    dispatcher::set_http_context(callback);
+pub fn set_http_context<F>(callback: F)
+where
+    F: FnMut(u32, u32) -> Box<dyn traits::HttpContext> + 'static,
+{
+    dispatcher::set_http_context(Box::new(callback));
 }
 
 #[no_mangle]

@@ -22,15 +22,19 @@ thread_local! {
 static DISPATCHER: Dispatcher = Dispatcher::new();
 }
 
-pub(crate) fn set_root_context(callback: NewRootContext) {
+type NewRootContextFn = dyn FnMut(u32) -> Box<dyn RootContext>;
+type NewStreamContextFn = dyn FnMut(u32, u32) -> Box<dyn StreamContext>;
+type NewHttpContextFn = dyn FnMut(u32, u32) -> Box<dyn HttpContext>;
+
+pub(crate) fn set_root_context(callback: Box<NewRootContextFn>) {
     DISPATCHER.with(|dispatcher| dispatcher.set_root_context(callback));
 }
 
-pub(crate) fn set_stream_context(callback: NewStreamContext) {
+pub(crate) fn set_stream_context(callback: Box<NewStreamContextFn>) {
     DISPATCHER.with(|dispatcher| dispatcher.set_stream_context(callback));
 }
 
-pub(crate) fn set_http_context(callback: NewHttpContext) {
+pub(crate) fn set_http_context(callback: Box<NewHttpContextFn>) {
     DISPATCHER.with(|dispatcher| dispatcher.set_http_context(callback));
 }
 
@@ -44,11 +48,11 @@ impl Context for NoopRoot {}
 impl RootContext for NoopRoot {}
 
 struct Dispatcher {
-    new_root: Cell<Option<NewRootContext>>,
+    new_root: RefCell<Option<Box<NewRootContextFn>>>,
     roots: RefCell<HashMap<u32, Box<dyn RootContext>>>,
-    new_stream: Cell<Option<NewStreamContext>>,
+    new_stream: RefCell<Option<Box<NewStreamContextFn>>>,
     streams: RefCell<HashMap<u32, Box<dyn StreamContext>>>,
-    new_http_stream: Cell<Option<NewHttpContext>>,
+    new_http_stream: RefCell<Option<Box<NewHttpContextFn>>>,
     http_streams: RefCell<HashMap<u32, Box<dyn HttpContext>>>,
     active_id: Cell<u32>,
     callouts: RefCell<HashMap<u32, u32>>,
@@ -57,32 +61,32 @@ struct Dispatcher {
 impl Dispatcher {
     fn new() -> Dispatcher {
         Dispatcher {
-            new_root: Cell::new(None),
+            new_root: RefCell::new(None),
             roots: RefCell::new(HashMap::new()),
-            new_stream: Cell::new(None),
+            new_stream: RefCell::new(None),
             streams: RefCell::new(HashMap::new()),
-            new_http_stream: Cell::new(None),
+            new_http_stream: RefCell::new(None),
             http_streams: RefCell::new(HashMap::new()),
             active_id: Cell::new(0),
             callouts: RefCell::new(HashMap::new()),
         }
     }
 
-    fn set_root_context(&self, callback: NewRootContext) {
-        self.new_root.set(Some(callback));
+    fn set_root_context(&self, callback: Box<NewRootContextFn>) {
+        self.new_root.replace(Some(callback));
     }
 
-    fn set_stream_context(&self, callback: NewStreamContext) {
-        self.new_stream.set(Some(callback));
+    fn set_stream_context(&self, callback: Box<NewStreamContextFn>) {
+        self.new_stream.replace(Some(callback));
     }
 
-    fn set_http_context(&self, callback: NewHttpContext) {
-        self.new_http_stream.set(Some(callback));
+    fn set_http_context(&self, callback: Box<NewHttpContextFn>) {
+        self.new_http_stream.replace(Some(callback));
     }
 
     fn create_root_context(&self, context_id: u32) {
-        let new_context = match self.new_root.get() {
-            Some(f) => f(context_id),
+        let new_context = match *self.new_root.borrow_mut() {
+            Some(ref mut f) => f(context_id),
             None => Box::new(NoopRoot),
         };
         if self
@@ -130,8 +134,8 @@ impl Dispatcher {
         if !self.roots.borrow().contains_key(&root_context_id) {
             panic!("invalid root_context_id")
         }
-        let new_context = match self.new_stream.get() {
-            Some(f) => f(context_id, root_context_id),
+        let new_context = match *self.new_stream.borrow_mut() {
+            Some(ref mut f) => f(context_id, root_context_id),
             None => panic!("missing constructor"),
         };
         if self
@@ -148,8 +152,8 @@ impl Dispatcher {
         if !self.roots.borrow().contains_key(&root_context_id) {
             panic!("invalid root_context_id")
         }
-        let new_context = match self.new_http_stream.get() {
-            Some(f) => f(context_id, root_context_id),
+        let new_context = match *self.new_http_stream.borrow_mut() {
+            Some(ref mut f) => f(context_id, root_context_id),
             None => panic!("missing constructor"),
         };
         if self
@@ -178,9 +182,9 @@ impl Dispatcher {
             self.create_root_context(context_id)
         } else if self.create_child_context(context_id, root_context_id) {
             // root context created a child context by himself
-        } else if self.new_http_stream.get().is_some() {
+        } else if self.new_http_stream.borrow().is_some() {
             self.create_http_context(context_id, root_context_id);
-        } else if self.new_stream.get().is_some() {
+        } else if self.new_stream.borrow().is_some() {
             self.create_stream_context(context_id, root_context_id);
         } else {
             panic!("missing constructors")
