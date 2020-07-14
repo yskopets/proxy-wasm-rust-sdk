@@ -26,7 +26,7 @@ pub(crate) fn set_log_level(level: LogLevel) {
     if !INITIALIZED.load(Ordering::Relaxed) {
         log::set_logger(&LOGGER).unwrap();
         panic::set_hook(Box::new(|panic_info| {
-            hostcalls::log(LogLevel::Critical, &panic_info.to_string()).unwrap();
+            hostcalls::log(LogLevel::Critical, &panic_info.to_string()).unwrap_or(());
         }));
         INITIALIZED.store(true, Ordering::Relaxed);
     }
@@ -64,7 +64,7 @@ impl log::Log for Logger {
             log::Level::Error => LogLevel::Error,
         };
         let message = record.args().to_string();
-        hostcalls::log(level, &message).unwrap();
+        hostcalls::log(level, &message).unwrap_or(());
     }
 
     fn flush(&self) {}

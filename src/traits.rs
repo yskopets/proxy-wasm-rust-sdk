@@ -16,6 +16,8 @@ use crate::hostcalls;
 use crate::types::*;
 use std::time::{Duration, SystemTime};
 
+use crate::error::Result;
+
 pub trait Context {
     fn get_current_time(&self) -> SystemTime {
         hostcalls::get_current_time().unwrap()
@@ -38,7 +40,7 @@ pub trait Context {
         key: &str,
         value: Option<&[u8]>,
         cas: Option<u32>,
-    ) -> Result<(), Status> {
+    ) -> Result<()> {
         hostcalls::set_shared_data(key, value, cas)
     }
 
@@ -50,11 +52,11 @@ pub trait Context {
         hostcalls::resolve_shared_queue(vm_id, name).unwrap()
     }
 
-    fn dequeue_shared_queue(&self, queue_id: u32) -> Result<Option<Bytes>, Status> {
+    fn dequeue_shared_queue(&self, queue_id: u32) -> Result<Option<Bytes>> {
         hostcalls::dequeue_shared_queue(queue_id)
     }
 
-    fn enqueue_shared_queue(&self, queue_id: u32, value: Option<&[u8]>) -> Result<(), Status> {
+    fn enqueue_shared_queue(&self, queue_id: u32, value: Option<&[u8]>) -> Result<()> {
         hostcalls::enqueue_shared_queue(queue_id, value)
     }
 
@@ -65,7 +67,7 @@ pub trait Context {
         body: Option<&[u8]>,
         trailers: Vec<(&str, &str)>,
         timeout: Duration,
-    ) -> Result<u32, Status> {
+    ) -> Result<u32> {
         hostcalls::dispatch_http_call(upstream, headers, body, trailers, timeout)
     }
 

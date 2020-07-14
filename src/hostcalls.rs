@@ -17,15 +17,46 @@ use crate::types::*;
 use std::ptr::{null, null_mut};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use crate::error::{Result, HostCallError, HostResponseError};
+
+mod abi {
+    pub const PROXY_LOG: &str = "proxy_log";
+    pub const PROXY_GET_CURRENT_TIME_NANOSECONDS: &str = "proxy_get_current_time_nanoseconds";
+    pub const PROXY_SET_TICK_PERIOD_MILLISECONDS: &str = "proxy_set_tick_period_milliseconds";
+    pub const PROXY_GET_CONFIGURATION: &str = "proxy_get_configuration";
+    pub const PROXY_GET_BUFFER_BYTES: &str = "proxy_get_buffer_bytes";
+    pub const PROXY_GET_HEADER_MAP_PAIRS: &str = "proxy_get_header_map_pairs";
+    pub const PROXY_SET_HEADER_MAP_PAIRS: &str = "proxy_set_header_map_pairs";
+    pub const PROXY_GET_HEADER_MAP_VALUE: &str = "proxy_get_header_map_value";
+    pub const PROXY_REPLACE_HEADER_MAP_VALUE: &str = "proxy_replace_header_map_value";
+    pub const PROXY_REMOVE_HEADER_MAP_VALUE: &str = "proxy_remove_header_map_value";
+    pub const PROXY_ADD_HEADER_MAP_VALUE: &str = "proxy_add_header_map_value";
+    pub const PROXY_GET_PROPERTY: &str = "proxy_get_property";
+    pub const PROXY_SET_PROPERTY: &str = "proxy_set_property";
+    pub const PROXY_GET_SHARED_DATA: &str = "proxy_get_shared_data";
+    pub const PROXY_SET_SHARED_DATA: &str = "proxy_set_shared_data";
+    pub const PROXY_REGISTER_SHARED_QUEUE: &str = "proxy_register_shared_queue";
+    pub const PROXY_RESOLVE_SHARED_QUEUE: &str = "proxy_resolve_shared_queue";
+    pub const PROXY_DEQUEUE_SHARED_QUEUE: &str = "proxy_dequeue_shared_queue";
+    pub const PROXY_ENQUEUE_SHARED_QUEUE: &str = "proxy_enqueue_shared_queue";
+    pub const PROXY_CONTINUE_REQUEST: &str = "proxy_continue_request";
+    pub const PROXY_CONTINUE_RESPONSE: &str = "proxy_continue_response";
+    pub const PROXY_SEND_LOCAL_RESPONSE: &str = "proxy_send_local_response";
+    pub const PROXY_CLEAR_ROUTE_CACHE: &str = "proxy_clear_route_cache";
+    pub const PROXY_HTTP_CALL: &str = "proxy_http_call";
+    pub const PROXY_SET_EFFECTIVE_CONTEXT: &str = "proxy_set_effective_context";
+    pub const PROXY_DONE: &str = "proxy_done";
+}
+
 extern "C" {
     fn proxy_log(level: LogLevel, message_data: *const u8, message_size: usize) -> Status;
 }
 
-pub fn log(level: LogLevel, message: &str) -> Result<(), Status> {
+pub fn log(level: LogLevel, message: &str) -> Result<()> {
     unsafe {
         match proxy_log(level, message.as_ptr(), message.len()) {
             Status::Ok => Ok(()),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_LOG, status).into()),
         }
     }
 }
@@ -34,12 +65,12 @@ extern "C" {
     fn proxy_get_current_time_nanoseconds(return_time: *mut u64) -> Status;
 }
 
-pub fn get_current_time() -> Result<SystemTime, Status> {
+pub fn get_current_time() -> Result<SystemTime> {
     let mut return_time: u64 = 0;
     unsafe {
         match proxy_get_current_time_nanoseconds(&mut return_time) {
             Status::Ok => Ok(UNIX_EPOCH + Duration::from_nanos(return_time)),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_GET_CURRENT_TIME_NANOSECONDS, status).into()),
         }
     }
 }
@@ -48,11 +79,11 @@ extern "C" {
     fn proxy_set_tick_period_milliseconds(period: u32) -> Status;
 }
 
-pub fn set_tick_period(period: Duration) -> Result<(), Status> {
+pub fn set_tick_period(period: Duration) -> Result<()> {
     unsafe {
         match proxy_set_tick_period_milliseconds(period.as_millis() as u32) {
             Status::Ok => Ok(()),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_SET_TICK_PERIOD_MILLISECONDS, status).into()),
         }
     }
 }
@@ -64,7 +95,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn get_configuration() -> Result<Option<Bytes>, Status> {
+pub fn get_configuration() -> Result<Option<Bytes>> {
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
     unsafe {
@@ -80,7 +111,7 @@ pub fn get_configuration() -> Result<Option<Bytes>, Status> {
                     Ok(None)
                 }
             }
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_GET_CONFIGURATION, status).into()),
         }
     }
 }
@@ -99,7 +130,7 @@ pub fn get_buffer(
     buffer_type: BufferType,
     start: usize,
     max_size: usize,
-) -> Result<Option<Bytes>, Status> {
+) -> Result<Option<Bytes>> {
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
     unsafe {
@@ -122,7 +153,7 @@ pub fn get_buffer(
                 }
             }
             Status::NotFound => Ok(None),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_GET_BUFFER_BYTES, status).into()),
         }
     }
 }
@@ -135,7 +166,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn get_map(map_type: MapType) -> Result<Vec<(String, String)>, Status> {
+pub fn get_map(map_type: MapType) -> Result<Vec<(String, String)>> {
     unsafe {
         let mut return_data: *mut u8 = null_mut();
         let mut return_size: usize = 0;
@@ -143,12 +174,12 @@ pub fn get_map(map_type: MapType) -> Result<Vec<(String, String)>, Status> {
             Status::Ok => {
                 if !return_data.is_null() {
                     let serialized_map = Vec::from_raw_parts(return_data, return_size, return_size);
-                    Ok(utils::deserialize_map(&serialized_map))
+                    utils::deserialize_map(&serialized_map)
                 } else {
                     Ok(Vec::new())
                 }
             }
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_GET_HEADER_MAP_PAIRS, status).into()),
         }
     }
 }
@@ -161,12 +192,12 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn set_map(map_type: MapType, map: Vec<(&str, &str)>) -> Result<(), Status> {
+pub fn set_map(map_type: MapType, map: Vec<(&str, &str)>) -> Result<()> {
     let serialized_map = utils::serialize_map(map);
     unsafe {
         match proxy_set_header_map_pairs(map_type, serialized_map.as_ptr(), serialized_map.len()) {
             Status::Ok => Ok(()),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_SET_HEADER_MAP_PAIRS, status).into()),
         }
     }
 }
@@ -181,7 +212,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn get_map_value(map_type: MapType, key: &str) -> Result<Option<String>, Status> {
+pub fn get_map_value(map_type: MapType, key: &str) -> Result<Option<String>> {
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
     unsafe {
@@ -194,19 +225,18 @@ pub fn get_map_value(map_type: MapType, key: &str) -> Result<Option<String>, Sta
         ) {
             Status::Ok => {
                 if !return_data.is_null() {
-                    Ok(Some(
-                        String::from_utf8(Vec::from_raw_parts(
-                            return_data,
-                            return_size,
-                            return_size,
-                        ))
-                        .unwrap(),
+                    String::from_utf8(Vec::from_raw_parts(
+                        return_data,
+                        return_size,
+                        return_size,
                     ))
+                    .map(Option::from)
+                    .map_err(|err| HostResponseError::new(abi::PROXY_GET_HEADER_MAP_VALUE, err.into()).into())
                 } else {
                     Ok(None)
                 }
             }
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_GET_HEADER_MAP_VALUE, status).into()),
         }
     }
 }
@@ -229,7 +259,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn set_map_value(map_type: MapType, key: &str, value: Option<&str>) -> Result<(), Status> {
+pub fn set_map_value(map_type: MapType, key: &str, value: Option<&str>) -> Result<()> {
     unsafe {
         if let Some(value) = value {
             match proxy_replace_header_map_value(
@@ -240,12 +270,12 @@ pub fn set_map_value(map_type: MapType, key: &str, value: Option<&str>) -> Resul
                 value.len(),
             ) {
                 Status::Ok => Ok(()),
-                status => panic!("unexpected status: {}", status as u32),
+                status => Err(HostCallError::new(abi::PROXY_REPLACE_HEADER_MAP_VALUE, status).into()),
             }
         } else {
             match proxy_remove_header_map_value(map_type, key.as_ptr(), key.len()) {
                 Status::Ok => Ok(()),
-                status => panic!("unexpected status: {}", status as u32),
+                status => Err(HostCallError::new(abi::PROXY_REMOVE_HEADER_MAP_VALUE, status).into()),
             }
         }
     }
@@ -261,7 +291,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn add_map_value(map_type: MapType, key: &str, value: &str) -> Result<(), Status> {
+pub fn add_map_value(map_type: MapType, key: &str, value: &str) -> Result<()> {
     unsafe {
         match proxy_add_header_map_value(
             map_type,
@@ -271,7 +301,7 @@ pub fn add_map_value(map_type: MapType, key: &str, value: &str) -> Result<(), St
             value.len(),
         ) {
             Status::Ok => Ok(()),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_ADD_HEADER_MAP_VALUE, status).into()),
         }
     }
 }
@@ -285,7 +315,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn get_property(path: Vec<&str>) -> Result<Option<Bytes>, Status> {
+pub fn get_property(path: Vec<&str>) -> Result<Option<Bytes>> {
     let serialized_path = utils::serialize_property_path(path);
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
@@ -308,7 +338,7 @@ pub fn get_property(path: Vec<&str>) -> Result<Option<Bytes>, Status> {
                 }
             }
             Status::NotFound => Ok(None),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_GET_PROPERTY, status).into()),
         }
     }
 }
@@ -322,7 +352,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn set_property(path: Vec<&str>, value: Option<&[u8]>) -> Result<(), Status> {
+pub fn set_property(path: Vec<&str>, value: Option<&[u8]>) -> Result<()> {
     let serialized_path = utils::serialize_property_path(path);
     unsafe {
         match proxy_set_property(
@@ -332,7 +362,7 @@ pub fn set_property(path: Vec<&str>, value: Option<&[u8]>) -> Result<(), Status>
             value.map_or(0, |value| value.len()),
         ) {
             Status::Ok => Ok(()),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_SET_PROPERTY, status).into()),
         }
     }
 }
@@ -347,7 +377,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn get_shared_data(key: &str) -> Result<(Option<Bytes>, Option<u32>), Status> {
+pub fn get_shared_data(key: &str) -> Result<(Option<Bytes>, Option<u32>)> {
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
     let mut return_cas: u32 = 0;
@@ -374,7 +404,7 @@ pub fn get_shared_data(key: &str) -> Result<(Option<Bytes>, Option<u32>), Status
                 }
             }
             Status::NotFound => Ok((None, None)),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_GET_SHARED_DATA, status).into()),
         }
     }
 }
@@ -389,7 +419,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn set_shared_data(key: &str, value: Option<&[u8]>, cas: Option<u32>) -> Result<(), Status> {
+pub fn set_shared_data(key: &str, value: Option<&[u8]>, cas: Option<u32>) -> Result<()> {
     unsafe {
         match proxy_set_shared_data(
             key.as_ptr(),
@@ -399,8 +429,7 @@ pub fn set_shared_data(key: &str, value: Option<&[u8]>, cas: Option<u32>) -> Res
             cas.unwrap_or(0),
         ) {
             Status::Ok => Ok(()),
-            Status::CasMismatch => Err(Status::CasMismatch),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_SET_SHARED_DATA, status).into()),
         }
     }
 }
@@ -413,12 +442,12 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn register_shared_queue(name: &str) -> Result<u32, Status> {
+pub fn register_shared_queue(name: &str) -> Result<u32> {
     unsafe {
         let mut return_id: u32 = 0;
         match proxy_register_shared_queue(name.as_ptr(), name.len(), &mut return_id) {
             Status::Ok => Ok(return_id),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_REGISTER_SHARED_QUEUE, status).into()),
         }
     }
 }
@@ -433,7 +462,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn resolve_shared_queue(vm_id: &str, name: &str) -> Result<Option<u32>, Status> {
+pub fn resolve_shared_queue(vm_id: &str, name: &str) -> Result<Option<u32>> {
     let mut return_id: u32 = 0;
     unsafe {
         match proxy_resolve_shared_queue(
@@ -445,7 +474,7 @@ pub fn resolve_shared_queue(vm_id: &str, name: &str) -> Result<Option<u32>, Stat
         ) {
             Status::Ok => Ok(Some(return_id)),
             Status::NotFound => Ok(None),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_RESOLVE_SHARED_QUEUE, status).into()),
         }
     }
 }
@@ -458,7 +487,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn dequeue_shared_queue(queue_id: u32) -> Result<Option<Bytes>, Status> {
+pub fn dequeue_shared_queue(queue_id: u32) -> Result<Option<Bytes>> {
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
     unsafe {
@@ -475,8 +504,7 @@ pub fn dequeue_shared_queue(queue_id: u32) -> Result<Option<Bytes>, Status> {
                 }
             }
             Status::Empty => Ok(None),
-            Status::NotFound => Err(Status::NotFound),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_DEQUEUE_SHARED_QUEUE, status).into()),
         }
     }
 }
@@ -489,7 +517,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn enqueue_shared_queue(queue_id: u32, value: Option<&[u8]>) -> Result<(), Status> {
+pub fn enqueue_shared_queue(queue_id: u32, value: Option<&[u8]>) -> Result<()> {
     unsafe {
         match proxy_enqueue_shared_queue(
             queue_id,
@@ -497,8 +525,7 @@ pub fn enqueue_shared_queue(queue_id: u32, value: Option<&[u8]>) -> Result<(), S
             value.map_or(0, |value| value.len()),
         ) {
             Status::Ok => Ok(()),
-            Status::NotFound => Err(Status::NotFound),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_ENQUEUE_SHARED_QUEUE, status).into()),
         }
     }
 }
@@ -507,11 +534,11 @@ extern "C" {
     fn proxy_continue_request() -> Status;
 }
 
-pub fn resume_http_request() -> Result<(), Status> {
+pub fn resume_http_request() -> Result<()> {
     unsafe {
         match proxy_continue_request() {
             Status::Ok => Ok(()),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_CONTINUE_REQUEST, status).into()),
         }
     }
 }
@@ -520,11 +547,11 @@ extern "C" {
     fn proxy_continue_response() -> Status;
 }
 
-pub fn resume_http_response() -> Result<(), Status> {
+pub fn resume_http_response() -> Result<()> {
     unsafe {
         match proxy_continue_response() {
             Status::Ok => Ok(()),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_CONTINUE_RESPONSE, status).into()),
         }
     }
 }
@@ -546,7 +573,7 @@ pub fn send_http_response(
     status_code: u32,
     headers: Vec<(&str, &str)>,
     body: Option<&[u8]>,
-) -> Result<(), Status> {
+) -> Result<()> {
     let serialized_headers = utils::serialize_map(headers);
     unsafe {
         match proxy_send_local_response(
@@ -560,7 +587,7 @@ pub fn send_http_response(
             -1,
         ) {
             Status::Ok => Ok(()),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_SEND_LOCAL_RESPONSE, status).into()),
         }
     }
 }
@@ -569,11 +596,11 @@ extern "C" {
     fn proxy_clear_route_cache() -> Status;
 }
 
-pub fn clear_http_route_cache() -> Result<(), Status> {
+pub fn clear_http_route_cache() -> Result<()> {
     unsafe {
         match proxy_clear_route_cache() {
             Status::Ok => Ok(()),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_CLEAR_ROUTE_CACHE, status).into()),
         }
     }
 }
@@ -599,7 +626,7 @@ pub fn dispatch_http_call(
     body: Option<&[u8]>,
     trailers: Vec<(&str, &str)>,
     timeout: Duration,
-) -> Result<u32, Status> {
+) -> Result<u32> {
     let serialized_headers = utils::serialize_map(headers);
     let serialized_trailers = utils::serialize_map(trailers);
     let mut return_token: u32 = 0;
@@ -620,9 +647,7 @@ pub fn dispatch_http_call(
                 dispatcher::register_callout(return_token);
                 Ok(return_token)
             }
-            Status::BadArgument => Err(Status::BadArgument),
-            Status::InternalFailure => Err(Status::InternalFailure),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_HTTP_CALL, status).into()),
         }
     }
 }
@@ -631,12 +656,11 @@ extern "C" {
     fn proxy_set_effective_context(context_id: u32) -> Status;
 }
 
-pub fn set_effective_context(context_id: u32) -> Result<(), Status> {
+pub fn set_effective_context(context_id: u32) -> Result<()> {
     unsafe {
         match proxy_set_effective_context(context_id) {
             Status::Ok => Ok(()),
-            Status::BadArgument => Err(Status::BadArgument),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_SET_EFFECTIVE_CONTEXT, status).into()),
         }
     }
 }
@@ -645,11 +669,11 @@ extern "C" {
     fn proxy_done() -> Status;
 }
 
-pub fn done() -> Result<(), Status> {
+pub fn done() -> Result<()> {
     unsafe {
         match proxy_done() {
             Status::Ok => Ok(()),
-            status => panic!("unexpected status: {}", status as u32),
+            status => Err(HostCallError::new(abi::PROXY_DONE, status).into()),
         }
     }
 }
@@ -657,6 +681,7 @@ pub fn done() -> Result<(), Status> {
 mod utils {
     use crate::types::Bytes;
     use std::convert::TryFrom;
+    use crate::error::Result;
 
     pub(super) fn serialize_property_path(path: Vec<&str>) -> Bytes {
         if path.is_empty() {
@@ -695,27 +720,27 @@ mod utils {
         bytes
     }
 
-    pub(super) fn deserialize_map(bytes: &[u8]) -> Vec<(String, String)> {
+    pub(super) fn deserialize_map(bytes: &[u8]) -> Result<Vec<(String, String)>> {
         let mut map = Vec::new();
         if bytes.is_empty() {
-            return map;
+            return Ok(map);
         }
-        let size = u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[0..4]).unwrap()) as usize;
+        let size = u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[0..4])?) as usize;
         let mut p = 4 + size * 8;
         for n in 0..size {
             let s = 4 + n * 8;
-            let size = u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[s..s + 4]).unwrap()) as usize;
+            let size = u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[s..s + 4])?) as usize;
             let key = bytes[p..p + size].to_vec();
             p += size + 1;
             let size =
-                u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[s + 4..s + 8]).unwrap()) as usize;
+                u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[s + 4..s + 8])?) as usize;
             let value = bytes[p..p + size].to_vec();
             p += size + 1;
             map.push((
-                String::from_utf8(key).unwrap(),
-                String::from_utf8(value).unwrap(),
+                String::from_utf8(key)?,
+                String::from_utf8(value)?,
             ));
         }
-        map
+        Ok(map)
     }
 }
