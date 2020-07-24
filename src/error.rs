@@ -39,15 +39,15 @@ impl<'a> HostCallError<'a> {
     }
 
     pub fn module(&self) -> &'a str {
-        return "env"
+        "env"
     }
 
     pub fn function(&self) -> &'a str {
-        return self.function
+        self.function
     }
 
     pub fn status(&self) -> Status {
-        return self.status
+        self.status
     }
 }
 
@@ -56,7 +56,7 @@ impl<'a> fmt::Display for HostCallError<'a> {
         write!(
             f,
             "call to the host ABI function \"{}.{}\" has failed with status code {}",
-            "env",
+            self.module(),
             self.function,
             self.status as u32,
         )
@@ -78,11 +78,11 @@ impl<'a> HostResponseError<'a> {
     }
 
     pub fn module(&self) -> &'a str {
-        return "env"
+        "env"
     }
 
     pub fn function(&self) -> &'a str {
-        return self.function
+        self.function
     }
 }
 
@@ -91,7 +91,7 @@ impl<'a> fmt::Display for HostResponseError<'a> {
         write!(
             f,
             "failed to parse response from the host ABI function \"{}.{}\": {}",
-            "env",
+            self.module(),
             self.function,
             self.error,
         )

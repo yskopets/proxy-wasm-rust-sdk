@@ -17,7 +17,7 @@ use crate::types::*;
 use std::ptr::{null, null_mut};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::error::{Result, HostCallError, HostResponseError};
+use crate::error::{HostCallError, HostResponseError, Result};
 
 mod abi {
     pub const PROXY_LOG: &str = "proxy_log";
@@ -70,7 +70,9 @@ pub fn get_current_time() -> Result<SystemTime> {
     unsafe {
         match proxy_get_current_time_nanoseconds(&mut return_time) {
             Status::Ok => Ok(UNIX_EPOCH + Duration::from_nanos(return_time)),
-            status => Err(HostCallError::new(abi::PROXY_GET_CURRENT_TIME_NANOSECONDS, status).into()),
+            status => {
+                Err(HostCallError::new(abi::PROXY_GET_CURRENT_TIME_NANOSECONDS, status).into())
+            }
         }
     }
 }
@@ -83,7 +85,9 @@ pub fn set_tick_period(period: Duration) -> Result<()> {
     unsafe {
         match proxy_set_tick_period_milliseconds(period.as_millis() as u32) {
             Status::Ok => Ok(()),
-            status => Err(HostCallError::new(abi::PROXY_SET_TICK_PERIOD_MILLISECONDS, status).into()),
+            status => {
+                Err(HostCallError::new(abi::PROXY_SET_TICK_PERIOD_MILLISECONDS, status).into())
+            }
         }
     }
 }
@@ -126,11 +130,7 @@ extern "C" {
     ) -> Status;
 }
 
-pub fn get_buffer(
-    buffer_type: BufferType,
-    start: usize,
-    max_size: usize,
-) -> Result<Option<Bytes>> {
+pub fn get_buffer(buffer_type: BufferType, start: usize, max_size: usize) -> Result<Option<Bytes>> {
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
     unsafe {
@@ -225,13 +225,12 @@ pub fn get_map_value(map_type: MapType, key: &str) -> Result<Option<String>> {
         ) {
             Status::Ok => {
                 if !return_data.is_null() {
-                    String::from_utf8(Vec::from_raw_parts(
-                        return_data,
-                        return_size,
-                        return_size,
-                    ))
-                    .map(Option::from)
-                    .map_err(|err| HostResponseError::new(abi::PROXY_GET_HEADER_MAP_VALUE, err.into()).into())
+                    String::from_utf8(Vec::from_raw_parts(return_data, return_size, return_size))
+                        .map(Option::from)
+                        .map_err(|err| {
+                            HostResponseError::new(abi::PROXY_GET_HEADER_MAP_VALUE, err.into())
+                                .into()
+                        })
                 } else {
                     Ok(None)
                 }
@@ -270,12 +269,16 @@ pub fn set_map_value(map_type: MapType, key: &str, value: Option<&str>) -> Resul
                 value.len(),
             ) {
                 Status::Ok => Ok(()),
-                status => Err(HostCallError::new(abi::PROXY_REPLACE_HEADER_MAP_VALUE, status).into()),
+                status => {
+                    Err(HostCallError::new(abi::PROXY_REPLACE_HEADER_MAP_VALUE, status).into())
+                }
             }
         } else {
             match proxy_remove_header_map_value(map_type, key.as_ptr(), key.len()) {
                 Status::Ok => Ok(()),
-                status => Err(HostCallError::new(abi::PROXY_REMOVE_HEADER_MAP_VALUE, status).into()),
+                status => {
+                    Err(HostCallError::new(abi::PROXY_REMOVE_HEADER_MAP_VALUE, status).into())
+                }
             }
         }
     }
@@ -679,9 +682,9 @@ pub fn done() -> Result<()> {
 }
 
 mod utils {
+    use crate::error::Result;
     use crate::types::Bytes;
     use std::convert::TryFrom;
-    use crate::error::Result;
 
     pub(super) fn serialize_property_path(path: Vec<&str>) -> Bytes {
         if path.is_empty() {
@@ -732,14 +735,10 @@ mod utils {
             let size = u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[s..s + 4])?) as usize;
             let key = bytes[p..p + size].to_vec();
             p += size + 1;
-            let size =
-                u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[s + 4..s + 8])?) as usize;
+            let size = u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[s + 4..s + 8])?) as usize;
             let value = bytes[p..p + size].to_vec();
             p += size + 1;
-            map.push((
-                String::from_utf8(key)?,
-                String::from_utf8(value)?,
-            ));
+            map.push((String::from_utf8(key)?, String::from_utf8(value)?));
         }
         Ok(map)
     }
