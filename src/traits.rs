@@ -35,12 +35,7 @@ pub trait Context {
         hostcalls::get_shared_data(key).unwrap()
     }
 
-    fn set_shared_data(
-        &self,
-        key: &str,
-        value: Option<&[u8]>,
-        cas: Option<u32>,
-    ) -> Result<()> {
+    fn set_shared_data(&self, key: &str, value: Option<&[u8]>, cas: Option<u32>) -> Result<()> {
         hostcalls::set_shared_data(key, value, cas)
     }
 
