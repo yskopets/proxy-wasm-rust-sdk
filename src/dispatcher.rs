@@ -284,10 +284,10 @@ impl Dispatcher {
         }
     }
 
-    fn on_downstream_close(&self, context_id: u32, peer_type: PeerType) {
+    fn on_downstream_close(&self, context_id: u32, close_type: CloseType) {
         if let Some(stream) = self.streams.borrow_mut().get_mut(&context_id) {
             self.active_id.set(context_id);
-            stream.on_downstream_close(peer_type)
+            stream.on_downstream_close(close_type)
         } else {
             panic!("invalid context_id")
         }
@@ -302,10 +302,10 @@ impl Dispatcher {
         }
     }
 
-    fn on_upstream_close(&self, context_id: u32, peer_type: PeerType) {
+    fn on_upstream_close(&self, context_id: u32, close_type: CloseType) {
         if let Some(stream) = self.streams.borrow_mut().get_mut(&context_id) {
             self.active_id.set(context_id);
-            stream.on_upstream_close(peer_type)
+            stream.on_upstream_close(close_type)
         } else {
             panic!("invalid context_id")
         }
@@ -458,8 +458,8 @@ pub extern "C" fn proxy_on_downstream_data(
 }
 
 #[no_mangle]
-pub extern "C" fn proxy_on_downstream_connection_close(context_id: u32, peer_type: PeerType) {
-    DISPATCHER.with(|dispatcher| dispatcher.on_downstream_close(context_id, peer_type))
+pub extern "C" fn proxy_on_downstream_connection_close(context_id: u32, close_type: CloseType) {
+    DISPATCHER.with(|dispatcher| dispatcher.on_downstream_close(context_id, close_type))
 }
 
 #[no_mangle]
@@ -472,8 +472,8 @@ pub extern "C" fn proxy_on_upstream_data(
 }
 
 #[no_mangle]
-pub extern "C" fn proxy_on_upstream_connection_close(context_id: u32, peer_type: PeerType) {
-    DISPATCHER.with(|dispatcher| dispatcher.on_upstream_close(context_id, peer_type))
+pub extern "C" fn proxy_on_upstream_connection_close(context_id: u32, close_type: CloseType) {
+    DISPATCHER.with(|dispatcher| dispatcher.on_upstream_close(context_id, close_type))
 }
 
 #[no_mangle]

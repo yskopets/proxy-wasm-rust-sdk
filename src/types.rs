@@ -23,6 +23,7 @@ pub type NewHttpContext = fn(context_id: u32, root_context_id: u32) -> Box<dyn H
 
 #[repr(u32)]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[non_exhaustive]
 pub enum LogLevel {
     Trace = 0,
     Debug = 1,
@@ -34,6 +35,7 @@ pub enum LogLevel {
 
 #[repr(u32)]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[non_exhaustive]
 pub enum Action {
     Continue = 0,
     Pause = 1,
@@ -41,6 +43,7 @@ pub enum Action {
 
 #[repr(u32)]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[non_exhaustive]
 pub enum Status {
     Ok = 0,
     NotFound = 1,
@@ -52,6 +55,7 @@ pub enum Status {
 
 #[repr(u32)]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[non_exhaustive]
 pub enum BufferType {
     HttpRequestBody = 0,
     HttpResponseBody = 1,
@@ -62,6 +66,7 @@ pub enum BufferType {
 
 #[repr(u32)]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[non_exhaustive]
 pub enum MapType {
     HttpRequestHeaders = 0,
     HttpRequestTrailers = 1,
@@ -73,7 +78,8 @@ pub enum MapType {
 
 #[repr(u32)]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-pub enum PeerType {
+#[non_exhaustive]
+pub enum CloseType {
     Unknown = 0,
     Local = 1,
     Remote = 2,

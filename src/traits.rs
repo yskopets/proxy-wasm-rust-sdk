@@ -145,7 +145,7 @@ pub trait StreamContext: Context {
         hostcalls::get_buffer(BufferType::DownstreamData, start, max_size).unwrap()
     }
 
-    fn on_downstream_close(&mut self, _peer_type: PeerType) {}
+    fn on_downstream_close(&mut self, _close_type: CloseType) {}
 
     fn on_upstream_data(&mut self, _data_size: usize, _end_of_stream: bool) -> Action {
         Action::Continue
@@ -155,7 +155,7 @@ pub trait StreamContext: Context {
         hostcalls::get_buffer(BufferType::UpstreamData, start, max_size).unwrap()
     }
 
-    fn on_upstream_close(&mut self, _peer_type: PeerType) {}
+    fn on_upstream_close(&mut self, _close_type: CloseType) {}
 
     fn on_log(&mut self) {}
 }
