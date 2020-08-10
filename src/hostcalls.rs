@@ -181,7 +181,7 @@ extern "C" {
 }
 
 /// Returns all key-value pairs from a given map.
-pub fn get_map(map_type: MapType) -> Result<Vec<(String, Bytes)>> {
+pub fn get_map(map_type: MapType) -> Result<Vec<(String, HeaderValue)>> {
     unsafe {
         let mut return_data: *mut u8 = null_mut();
         let mut return_size: usize = 0;
@@ -264,7 +264,7 @@ extern "C" {
 /// # Ok(())
 /// # }
 /// ```
-pub fn get_map_value<K>(map_type: MapType, key: K) -> Result<Option<Bytes>>
+pub fn get_map_value<K>(map_type: MapType, key: K) -> Result<Option<HeaderValue>>
 where
     K: AsRef<str>,
 {
@@ -280,7 +280,9 @@ where
         ) {
             Status::Ok => {
                 if !return_data.is_null() {
-                    Ok(Vec::from_raw_parts(return_data, return_size, return_size)).map(Option::from)
+                    Ok(Vec::from_raw_parts(return_data, return_size, return_size))
+                        .map(HeaderValue::from)
+                        .map(Option::from)
                 } else {
                     Ok(None)
                 }
@@ -923,7 +925,7 @@ pub fn done() -> Result<()> {
 
 mod utils {
     use crate::error::Result;
-    use crate::types::Bytes;
+    use crate::types::{Bytes, HeaderValue};
     use std::convert::TryFrom;
 
     pub(super) fn serialize_property_path<P>(path: &[P]) -> Bytes
@@ -970,7 +972,7 @@ mod utils {
         bytes
     }
 
-    pub(super) fn deserialize_map(bytes: &[u8]) -> Result<Vec<(String, Bytes)>> {
+    pub(super) fn deserialize_map(bytes: &[u8]) -> Result<Vec<(String, HeaderValue)>> {
         let mut map = Vec::new();
         if bytes.is_empty() {
             return Ok(map);
@@ -985,7 +987,7 @@ mod utils {
             let size = u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[s + 4..s + 8])?) as usize;
             let value = bytes[p..p + size].to_vec();
             p += size + 1;
-            map.push((String::from_utf8(key)?, value));
+            map.push((String::from_utf8(key)?, value.into()));
         }
         Ok(map)
     }
