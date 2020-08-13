@@ -34,6 +34,7 @@ mod abi {
     pub const PROXY_SET_TICK_PERIOD_MILLISECONDS: &str = "proxy_set_tick_period_milliseconds";
     pub const PROXY_GET_CONFIGURATION: &str = "proxy_get_configuration";
     pub const PROXY_GET_BUFFER_BYTES: &str = "proxy_get_buffer_bytes";
+    pub const PROXY_SET_BUFFER_BYTES: &str = "proxy_set_buffer_bytes";
     pub const PROXY_GET_HEADER_MAP_PAIRS: &str = "proxy_get_header_map_pairs";
     pub const PROXY_SET_HEADER_MAP_PAIRS: &str = "proxy_set_header_map_pairs";
     pub const PROXY_GET_HEADER_MAP_VALUE: &str = "proxy_get_header_map_value";
@@ -168,6 +169,47 @@ pub fn get_buffer(
             }
             Status::NotFound => Ok(None),
             status => Err(HostCallError::new(abi::PROXY_GET_BUFFER_BYTES, status).into()),
+        }
+    }
+}
+
+extern "C" {
+    fn proxy_set_buffer_bytes(
+        buffer_type: BufferType,
+        start: usize,
+        size: usize,
+        buffer_data: *const u8,
+        buffer_size: usize,
+    ) -> Status;
+}
+
+/// Mutates content in a given buffer.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use proxy_wasm_experimental as proxy_wasm;
+/// use proxy_wasm::hostcalls;
+/// use proxy_wasm::types::BufferType;
+///
+/// # fn action() -> proxy_wasm::error::Result<()> {
+/// hostcalls::set_buffer(BufferType::HttpRequestBody, 0, usize::MAX, "replacement text")?;
+/// # Ok(())
+/// # }
+pub fn set_buffer<B>(buffer_type: BufferType, start: usize, size: usize, value: B) -> Result<()>
+where
+    B: AsRef<[u8]>,
+{
+    unsafe {
+        match proxy_set_buffer_bytes(
+            buffer_type,
+            start,
+            size,
+            value.as_ref().as_ptr(),
+            value.as_ref().len(),
+        ) {
+            Status::Ok => Ok(()),
+            status => Err(HostCallError::new(abi::PROXY_SET_BUFFER_BYTES, status).into()),
         }
     }
 }
