@@ -82,7 +82,7 @@ pub enum PeerType {
 pub type Bytes = Vec<u8>;
 
 /// Represents an HTTP header value that is not necessarily a UTF-8 encoded string.
-#[derive(Eq)]
+#[derive(Eq, Clone)]
 pub struct HeaderValue {
     inner: Result<String, Bytes>,
 }
