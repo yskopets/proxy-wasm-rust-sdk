@@ -135,6 +135,13 @@ impl From<&str> for HeaderValue {
     }
 }
 
+impl From<&HeaderValue> for HeaderValue {
+    #[inline]
+    fn from(data: &HeaderValue) -> Self {
+        data.clone()
+    }
+}
+
 impl fmt::Display for HeaderValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.inner {
