@@ -20,13 +20,13 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::error::{HostCallError, HostResponseError, Result};
 
 /// Represents empty headers map.
-pub const NO_HEADERS: &[(&str, &[u8])] = &[];
+pub const NO_HEADERS: &[(&[u8], &[u8])] = &[];
 
 /// Represents empty body.
 pub const NO_BODY: Option<&[u8]> = None;
 
 /// Represents empty trailers map.
-pub const NO_TRAILERS: &[(&str, &[u8])] = &[];
+pub const NO_TRAILERS: &[(&[u8], &[u8])] = &[];
 
 mod abi {
     pub const PROXY_LOG: &str = "proxy_log";
@@ -112,18 +112,16 @@ extern "C" {
 }
 
 /// Returns configuration, e.g. VM configuration, extension configuration, etc.
-pub fn get_configuration() -> Result<Option<Bytes>> {
+pub fn get_configuration() -> Result<Option<ByteString>> {
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
     unsafe {
         match proxy_get_configuration(&mut return_data, &mut return_size) {
             Status::Ok => {
                 if !return_data.is_null() {
-                    Ok(Some(Vec::from_raw_parts(
-                        return_data,
-                        return_size,
-                        return_size,
-                    )))
+                    Ok(Vec::from_raw_parts(return_data, return_size, return_size))
+                        .map(ByteString::from)
+                        .map(Option::from)
                 } else {
                     Ok(None)
                 }
@@ -144,7 +142,11 @@ extern "C" {
 }
 
 /// Returns content from a given buffer.
-pub fn get_buffer(buffer_type: BufferType, start: usize, max_size: usize) -> Result<Option<Bytes>> {
+pub fn get_buffer(
+    buffer_type: BufferType,
+    start: usize,
+    max_size: usize,
+) -> Result<Option<ByteString>> {
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
     unsafe {
@@ -157,11 +159,9 @@ pub fn get_buffer(buffer_type: BufferType, start: usize, max_size: usize) -> Res
         ) {
             Status::Ok => {
                 if !return_data.is_null() {
-                    Ok(Some(Vec::from_raw_parts(
-                        return_data,
-                        return_size,
-                        return_size,
-                    )))
+                    Ok(Vec::from_raw_parts(return_data, return_size, return_size))
+                        .map(ByteString::from)
+                        .map(Option::from)
                 } else {
                     Ok(None)
                 }
@@ -181,7 +181,7 @@ extern "C" {
 }
 
 /// Returns all key-value pairs from a given map.
-pub fn get_map(map_type: MapType) -> Result<Vec<(String, HeaderValue)>> {
+pub fn get_map(map_type: MapType) -> Result<Vec<(ByteString, ByteString)>> {
     unsafe {
         let mut return_data: *mut u8 = null_mut();
         let mut return_size: usize = 0;
@@ -228,7 +228,7 @@ extern "C" {
 /// ```
 pub fn set_map<K, V>(map_type: MapType, map: &[(K, V)]) -> Result<()>
 where
-    K: AsRef<str>,
+    K: AsRef<[u8]>,
     V: AsRef<[u8]>,
 {
     let serialized_map = utils::serialize_map(map);
@@ -264,9 +264,9 @@ extern "C" {
 /// # Ok(())
 /// # }
 /// ```
-pub fn get_map_value<K>(map_type: MapType, key: K) -> Result<Option<HeaderValue>>
+pub fn get_map_value<K>(map_type: MapType, key: K) -> Result<Option<ByteString>>
 where
-    K: AsRef<str>,
+    K: AsRef<[u8]>,
 {
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
@@ -281,7 +281,7 @@ where
             Status::Ok => {
                 if !return_data.is_null() {
                     Ok(Vec::from_raw_parts(return_data, return_size, return_size))
-                        .map(HeaderValue::from)
+                        .map(ByteString::from)
                         .map(Option::from)
                 } else {
                     Ok(None)
@@ -326,7 +326,7 @@ extern "C" {
 /// ```
 pub fn set_map_value<K, V>(map_type: MapType, key: K, value: Option<V>) -> Result<()>
 where
-    K: AsRef<str>,
+    K: AsRef<[u8]>,
     V: AsRef<[u8]>,
 {
     unsafe {
@@ -381,7 +381,7 @@ extern "C" {
 /// ```
 pub fn add_map_value<K, V>(map_type: MapType, key: K, value: V) -> Result<()>
 where
-    K: AsRef<str>,
+    K: AsRef<[u8]>,
     V: AsRef<[u8]>,
 {
     unsafe {
@@ -420,7 +420,7 @@ extern "C" {
 /// # Ok(())
 /// # }
 /// ```
-pub fn get_property<P>(path: &[P]) -> Result<Option<Bytes>>
+pub fn get_property<P>(path: &[P]) -> Result<Option<ByteString>>
 where
     P: AsRef<str>,
 {
@@ -436,11 +436,9 @@ where
         ) {
             Status::Ok => {
                 if !return_data.is_null() {
-                    Ok(Some(Vec::from_raw_parts(
-                        return_data,
-                        return_size,
-                        return_size,
-                    )))
+                    Ok(Vec::from_raw_parts(return_data, return_size, return_size))
+                        .map(ByteString::from)
+                        .map(Option::from)
                 } else {
                     Ok(None)
                 }
@@ -518,7 +516,7 @@ extern "C" {
 /// # Ok(())
 /// # }
 /// ```
-pub fn get_shared_data<K>(key: K) -> Result<(Option<Bytes>, Option<u32>)>
+pub fn get_shared_data<K>(key: K) -> Result<(Option<ByteString>, Option<u32>)>
 where
     K: AsRef<str>,
 {
@@ -540,7 +538,8 @@ where
                 };
                 if !return_data.is_null() {
                     Ok((
-                        Some(Vec::from_raw_parts(return_data, return_size, return_size)),
+                        Some(Vec::from_raw_parts(return_data, return_size, return_size))
+                            .map(ByteString::from),
                         cas,
                     ))
                 } else {
@@ -654,18 +653,16 @@ extern "C" {
 }
 
 /// Returns data from the end of a given queue.
-pub fn dequeue_shared_queue(queue_id: u32) -> Result<Option<Bytes>> {
+pub fn dequeue_shared_queue(queue_id: u32) -> Result<Option<ByteString>> {
     let mut return_data: *mut u8 = null_mut();
     let mut return_size: usize = 0;
     unsafe {
         match proxy_dequeue_shared_queue(queue_id, &mut return_data, &mut return_size) {
             Status::Ok => {
                 if !return_data.is_null() {
-                    Ok(Some(Vec::from_raw_parts(
-                        return_data,
-                        return_size,
-                        return_size,
-                    )))
+                    Ok(Vec::from_raw_parts(return_data, return_size, return_size))
+                        .map(ByteString::from)
+                        .map(Option::from)
                 } else {
                     Ok(None)
                 }
@@ -776,7 +773,7 @@ pub fn send_http_response<K, V, B>(
     body: Option<B>,
 ) -> Result<()>
 where
-    K: AsRef<str>,
+    K: AsRef<[u8]>,
     V: AsRef<[u8]>,
     B: AsRef<[u8]>,
 {
@@ -861,9 +858,9 @@ pub fn dispatch_http_call<K1, V1, K2, V2, B>(
     timeout: Duration,
 ) -> Result<u32>
 where
-    K1: AsRef<str>,
+    K1: AsRef<[u8]>,
     V1: AsRef<[u8]>,
-    K2: AsRef<str>,
+    K2: AsRef<[u8]>,
     V2: AsRef<[u8]>,
     B: AsRef<[u8]>,
 {
@@ -925,10 +922,10 @@ pub fn done() -> Result<()> {
 
 mod utils {
     use crate::error::Result;
-    use crate::types::{Bytes, HeaderValue};
+    use crate::types::ByteString;
     use std::convert::TryFrom;
 
-    pub(super) fn serialize_property_path<P>(path: &[P]) -> Bytes
+    pub(super) fn serialize_property_path<P>(path: &[P]) -> Vec<u8>
     where
         P: AsRef<str>,
     {
@@ -939,7 +936,7 @@ mod utils {
         for part in path {
             size += part.as_ref().len() + 1;
         }
-        let mut bytes: Bytes = Vec::with_capacity(size);
+        let mut bytes: Vec<u8> = Vec::with_capacity(size);
         for part in path {
             bytes.extend_from_slice(part.as_ref().as_bytes());
             bytes.push(0);
@@ -948,23 +945,23 @@ mod utils {
         bytes
     }
 
-    pub(super) fn serialize_map<K, V>(map: &[(K, V)]) -> Bytes
+    pub(super) fn serialize_map<K, V>(map: &[(K, V)]) -> Vec<u8>
     where
-        K: AsRef<str>,
+        K: AsRef<[u8]>,
         V: AsRef<[u8]>,
     {
         let mut size: usize = 4;
         for (name, value) in map {
             size += name.as_ref().len() + value.as_ref().len() + 10;
         }
-        let mut bytes: Bytes = Vec::with_capacity(size);
+        let mut bytes: Vec<u8> = Vec::with_capacity(size);
         bytes.extend_from_slice(&map.len().to_le_bytes());
         for (name, value) in map {
             bytes.extend_from_slice(&name.as_ref().len().to_le_bytes());
             bytes.extend_from_slice(&value.as_ref().len().to_le_bytes());
         }
         for (name, value) in map {
-            bytes.extend_from_slice(name.as_ref().as_bytes());
+            bytes.extend_from_slice(name.as_ref());
             bytes.push(0);
             bytes.extend_from_slice(value.as_ref());
             bytes.push(0);
@@ -972,7 +969,7 @@ mod utils {
         bytes
     }
 
-    pub(super) fn deserialize_map(bytes: &[u8]) -> Result<Vec<(String, HeaderValue)>> {
+    pub(super) fn deserialize_map(bytes: &[u8]) -> Result<Vec<(ByteString, ByteString)>> {
         let mut map = Vec::new();
         if bytes.is_empty() {
             return Ok(map);
@@ -987,7 +984,7 @@ mod utils {
             let size = u32::from_le_bytes(<[u8; 4]>::try_from(&bytes[s + 4..s + 8])?) as usize;
             let value = bytes[p..p + size].to_vec();
             p += size + 1;
-            map.push((String::from_utf8(key)?, value.into()));
+            map.push((key.into(), value.into()));
         }
         Ok(map)
     }

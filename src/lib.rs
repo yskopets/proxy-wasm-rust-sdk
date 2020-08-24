@@ -20,6 +20,7 @@ pub mod traits;
 pub mod types;
 
 mod allocator;
+mod bytestring;
 mod dispatcher;
 mod logger;
 

@@ -16,6 +16,7 @@ wee_alloc = "0.4"
 [dev-dependencies]
 version-sync = "0.9"
 chrono = "0.4"
+bstr = "0.2"
 
 [profile.release]
 lto = true
