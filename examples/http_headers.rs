@@ -33,7 +33,7 @@ struct HttpHeaders {
 impl Context for HttpHeaders {}
 
 impl HttpContext for HttpHeaders {
-    fn on_http_request_headers(&mut self, _: usize) -> Action {
+    fn on_http_request_headers(&mut self, _: usize, _: bool) -> Action {
         for (name, value) in &self.get_http_request_headers() {
             trace!("#{} -> {}: {}", self.context_id, name, value);
         }
@@ -51,7 +51,7 @@ impl HttpContext for HttpHeaders {
         }
     }
 
-    fn on_http_response_headers(&mut self, _: usize) -> Action {
+    fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
         for (name, value) in &self.get_http_response_headers() {
             trace!("#{} <- {}: {}", self.context_id, name, value);
         }

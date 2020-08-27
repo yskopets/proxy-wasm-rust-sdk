@@ -157,7 +157,7 @@ pub trait StreamContext: Context {
 }
 
 pub trait HttpContext: Context {
-    fn on_http_request_headers(&mut self, _num_headers: usize) -> Action {
+    fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
         Action::Continue
     }
 
@@ -217,7 +217,7 @@ pub trait HttpContext: Context {
         hostcalls::continue_stream(StreamType::Request).unwrap()
     }
 
-    fn on_http_response_headers(&mut self, _num_headers: usize) -> Action {
+    fn on_http_response_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
         Action::Continue
     }
 
