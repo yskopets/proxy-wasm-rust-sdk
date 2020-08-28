@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["proxy_wasm_experimental"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html\" title=\"trait core::ops::deref::DerefMut\">DerefMut</a> for <a class=\"struct\" href=\"proxy_wasm_experimental/types/struct.ByteString.html\" title=\"struct proxy_wasm_experimental::types::ByteString\">ByteString</a>","synthetic":false,"types":["proxy_wasm_experimental::bytestring::ByteString"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

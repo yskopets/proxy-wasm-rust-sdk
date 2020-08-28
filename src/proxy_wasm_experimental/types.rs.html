@@ -94,6 +94,8 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">traits</span>::<span class="kw-2">*</span>;
 
+<span class="kw">pub</span> <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">bytestring</span>::<span class="ident">ByteString</span>;
+
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">NewRootContext</span> <span class="op">=</span> <span class="kw">fn</span>(<span class="ident">context_id</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">RootContext</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">NewStreamContext</span> <span class="op">=</span> <span class="kw">fn</span>(<span class="ident">context_id</span>: <span class="ident">u32</span>, <span class="ident">root_context_id</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StreamContext</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">NewHttpContext</span> <span class="op">=</span> <span class="kw">fn</span>(<span class="ident">context_id</span>: <span class="ident">u32</span>, <span class="ident">root_context_id</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">HttpContext</span><span class="op">&gt;</span>;
@@ -155,7 +157,5 @@
     <span class="ident">Local</span> <span class="op">=</span> <span class="number">1</span>,
     <span class="ident">Remote</span> <span class="op">=</span> <span class="number">2</span>,
 }
-
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Bytes</span> <span class="op">=</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>;
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "proxy_wasm_experimental";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
