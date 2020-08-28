@@ -14,6 +14,8 @@
 
 use crate::traits::*;
 
+pub use crate::bytestring::ByteString;
+
 pub type NewRootContext = fn(context_id: u32) -> Box<dyn RootContext>;
 pub type NewStreamContext = fn(context_id: u32, root_context_id: u32) -> Box<dyn StreamContext>;
 pub type NewHttpContext = fn(context_id: u32, root_context_id: u32) -> Box<dyn HttpContext>;
@@ -75,5 +77,3 @@ pub enum PeerType {
     Local = 1,
     Remote = 2,
 }
-
-pub type Bytes = Vec<u8>;
