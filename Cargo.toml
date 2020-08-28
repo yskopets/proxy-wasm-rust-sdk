@@ -1,7 +1,7 @@
 [package]
 name = "proxy-wasm-experimental"
-version = "0.0.6-alpha1"
-authors = ["Piotr Sikora <piotrsikora@google.com>"]
+version = "0.0.6"
+authors = ["Piotr Sikora <piotrsikora@google.com>", "Yaroslav Skopets <yaroslav@tetrate.io>"]
 description = "WebAssembly for Proxies"
 readme = "README.md"
 license = "Apache-2.0"
