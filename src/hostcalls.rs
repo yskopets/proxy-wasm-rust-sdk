@@ -32,7 +32,6 @@ mod abi {
     pub const PROXY_LOG: &str = "proxy_log";
     pub const PROXY_GET_CURRENT_TIME_NANOSECONDS: &str = "proxy_get_current_time_nanoseconds";
     pub const PROXY_SET_TICK_PERIOD_MILLISECONDS: &str = "proxy_set_tick_period_milliseconds";
-    pub const PROXY_GET_CONFIGURATION: &str = "proxy_get_configuration";
     pub const PROXY_GET_BUFFER_BYTES: &str = "proxy_get_buffer_bytes";
     pub const PROXY_SET_BUFFER_BYTES: &str = "proxy_set_buffer_bytes";
     pub const PROXY_GET_HEADER_MAP_PAIRS: &str = "proxy_get_header_map_pairs";
@@ -49,10 +48,9 @@ mod abi {
     pub const PROXY_RESOLVE_SHARED_QUEUE: &str = "proxy_resolve_shared_queue";
     pub const PROXY_DEQUEUE_SHARED_QUEUE: &str = "proxy_dequeue_shared_queue";
     pub const PROXY_ENQUEUE_SHARED_QUEUE: &str = "proxy_enqueue_shared_queue";
-    pub const PROXY_CONTINUE_REQUEST: &str = "proxy_continue_request";
-    pub const PROXY_CONTINUE_RESPONSE: &str = "proxy_continue_response";
+    pub const PROXY_CONTINUE_STREAM: &str = "proxy_continue_stream";
+    pub const PROXY_CLOSE_STREAM: &str = "proxy_close_stream";
     pub const PROXY_SEND_LOCAL_RESPONSE: &str = "proxy_send_local_response";
-    pub const PROXY_CLEAR_ROUTE_CACHE: &str = "proxy_clear_route_cache";
     pub const PROXY_HTTP_CALL: &str = "proxy_http_call";
     pub const PROXY_SET_EFFECTIVE_CONTEXT: &str = "proxy_set_effective_context";
     pub const PROXY_DONE: &str = "proxy_done";
@@ -101,33 +99,6 @@ pub fn set_tick_period(period: Duration) -> Result<()> {
             status => {
                 Err(HostCallError::new(abi::PROXY_SET_TICK_PERIOD_MILLISECONDS, status).into())
             }
-        }
-    }
-}
-
-extern "C" {
-    fn proxy_get_configuration(
-        return_buffer_data: *mut *mut u8,
-        return_buffer_size: *mut usize,
-    ) -> Status;
-}
-
-/// Returns configuration, e.g. VM configuration, extension configuration, etc.
-pub fn get_configuration() -> Result<Option<ByteString>> {
-    let mut return_data: *mut u8 = null_mut();
-    let mut return_size: usize = 0;
-    unsafe {
-        match proxy_get_configuration(&mut return_data, &mut return_size) {
-            Status::Ok => {
-                if !return_data.is_null() {
-                    Ok(Vec::from_raw_parts(return_data, return_size, return_size))
-                        .map(ByteString::from)
-                        .map(Option::from)
-                } else {
-                    Ok(None)
-                }
-            }
-            status => Err(HostCallError::new(abi::PROXY_GET_CONFIGURATION, status).into()),
         }
     }
 }
@@ -752,29 +723,29 @@ where
 }
 
 extern "C" {
-    fn proxy_continue_request() -> Status;
+    fn proxy_continue_stream(stream: StreamType) -> Status;
 }
 
-/// Resume processing of paused HTTP request.
-pub fn resume_http_request() -> Result<()> {
+/// Resumes processing of a given stream, i.e. HTTP request or HTTP response.
+pub fn continue_stream(stream_type: StreamType) -> Result<()> {
     unsafe {
-        match proxy_continue_request() {
+        match proxy_continue_stream(stream_type) {
             Status::Ok => Ok(()),
-            status => Err(HostCallError::new(abi::PROXY_CONTINUE_REQUEST, status).into()),
+            status => Err(HostCallError::new(abi::PROXY_CONTINUE_STREAM, status).into()),
         }
     }
 }
 
 extern "C" {
-    fn proxy_continue_response() -> Status;
+    fn proxy_close_stream(stream: StreamType) -> Status;
 }
 
-/// Resume processing of paused HTTP response.
-pub fn resume_http_response() -> Result<()> {
+/// Terminates processing of a given stream, i.e. HTTP request or HTTP response.
+pub fn close_stream(stream_type: StreamType) -> Result<()> {
     unsafe {
-        match proxy_continue_response() {
+        match proxy_close_stream(stream_type) {
             Status::Ok => Ok(()),
-            status => Err(HostCallError::new(abi::PROXY_CONTINUE_RESPONSE, status).into()),
+            status => Err(HostCallError::new(abi::PROXY_CLOSE_STREAM, status).into()),
         }
     }
 }
@@ -836,20 +807,6 @@ where
         ) {
             Status::Ok => Ok(()),
             status => Err(HostCallError::new(abi::PROXY_SEND_LOCAL_RESPONSE, status).into()),
-        }
-    }
-}
-
-extern "C" {
-    fn proxy_clear_route_cache() -> Status;
-}
-
-/// Clears HTTP route cache.
-pub fn clear_http_route_cache() -> Result<()> {
-    unsafe {
-        match proxy_clear_route_cache() {
-            Status::Ok => Ok(()),
-            status => Err(HostCallError::new(abi::PROXY_CLEAR_ROUTE_CACHE, status).into()),
         }
     }
 }

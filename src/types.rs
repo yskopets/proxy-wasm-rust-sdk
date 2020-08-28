@@ -56,7 +56,11 @@ pub enum BufferType {
     HttpResponseBody = 1,
     DownstreamData = 2,
     UpstreamData = 3,
-    HttpCallResponseBody = 4,
+    HttpCallResponseBody = 4, // Immutable
+    GrpcReceiveBuffer = 5,    // Immutable
+    VmConfiguration = 6,      // Immutable
+    PluginConfiguration = 7,  // Immutable
+    CallData = 8,             // Immutable
 }
 
 #[repr(u32)]
@@ -66,8 +70,10 @@ pub enum MapType {
     HttpRequestTrailers = 1,
     HttpResponseHeaders = 2,
     HttpResponseTrailers = 3,
-    HttpCallResponseHeaders = 6,
-    HttpCallResponseTrailers = 7,
+    GrpcReceiveInitialMetadata = 4,  // Immutable
+    GrpcReceiveTrailingMetadata = 5, // Immutable
+    HttpCallResponseHeaders = 6,     // Immutable
+    HttpCallResponseTrailers = 7,    // Immutable
 }
 
 #[repr(u32)]
@@ -76,4 +82,11 @@ pub enum PeerType {
     Unknown = 0,
     Local = 1,
     Remote = 2,
+}
+
+#[repr(u32)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum StreamType {
+    Request = 0,
+    Response = 1,
 }

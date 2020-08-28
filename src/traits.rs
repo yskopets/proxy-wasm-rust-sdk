@@ -111,10 +111,6 @@ pub trait RootContext: Context {
         true
     }
 
-    fn get_configuration(&self) -> Option<ByteString> {
-        hostcalls::get_configuration().unwrap()
-    }
-
     fn set_tick_period(&self, period: Duration) {
         hostcalls::set_tick_period(period).unwrap()
     }
@@ -161,7 +157,7 @@ pub trait StreamContext: Context {
 }
 
 pub trait HttpContext: Context {
-    fn on_http_request_headers(&mut self, _num_headers: usize) -> Action {
+    fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
         Action::Continue
     }
 
@@ -218,10 +214,10 @@ pub trait HttpContext: Context {
     }
 
     fn resume_http_request(&self) {
-        hostcalls::resume_http_request().unwrap()
+        hostcalls::continue_stream(StreamType::Request).unwrap()
     }
 
-    fn on_http_response_headers(&mut self, _num_headers: usize) -> Action {
+    fn on_http_response_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
         Action::Continue
     }
 
@@ -278,7 +274,7 @@ pub trait HttpContext: Context {
     }
 
     fn resume_http_response(&self) {
-        hostcalls::resume_http_response().unwrap()
+        hostcalls::continue_stream(StreamType::Response).unwrap()
     }
 
     fn send_http_response(
@@ -288,10 +284,6 @@ pub trait HttpContext: Context {
         body: Option<&[u8]>,
     ) {
         hostcalls::send_http_response(status_code, &headers, body).unwrap()
-    }
-
-    fn clear_http_route_cache(&self) {
-        hostcalls::clear_http_route_cache().unwrap()
     }
 
     fn on_log(&mut self) {}
