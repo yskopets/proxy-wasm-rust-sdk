@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use proxy_wasm_experimental as proxy_wasm;
+
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
@@ -40,7 +42,7 @@ struct HttpBody;
 impl Context for HttpBody {}
 
 impl HttpContext for HttpBody {
-    fn on_http_response_headers(&mut self, _: usize) -> Action {
+    fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
         // If there is a Content-Length header and we change the length of
         // the body later, then clients will break. So remove it.
         // We must do this here, because once we exit this function we
@@ -59,7 +61,7 @@ impl HttpContext for HttpBody {
         // Replace the message body if it contains the text "secret".
         // Since we returned "Pause" previuously, this will return the whole body.
         if let Some(body_bytes) = self.get_http_response_body(0, body_size) {
-            let body_str = String::from_utf8(body_bytes).unwrap();
+            let body_str = body_bytes.into_string().unwrap();
             if body_str.contains("secret") {
                 let new_body = format!("Original message body ({} bytes) redacted.", body_size);
                 self.set_http_response_body(0, body_size, &new_body.into_bytes());

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use proxy_wasm_experimental as proxy_wasm;
+
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
@@ -32,7 +34,7 @@ struct HttpConfigHeader {
 impl Context for HttpConfigHeader {}
 
 impl HttpContext for HttpConfigHeader {
-    fn on_http_response_headers(&mut self, _: usize) -> Action {
+    fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
         self.add_http_response_header("custom-header", self.header_content.as_str());
         Action::Continue
     }
@@ -45,9 +47,13 @@ struct HttpConfigHeaderRoot {
 impl Context for HttpConfigHeaderRoot {}
 
 impl RootContext for HttpConfigHeaderRoot {
-    fn on_configure(&mut self, _: usize) -> bool {
-        if let Some(config_bytes) = self.get_configuration() {
-            self.header_content = String::from_utf8(config_bytes).unwrap()
+    fn on_configure(&mut self, configuration_size: usize) -> bool {
+        if let Ok(Some(config_bytes)) = proxy_wasm::hostcalls::get_buffer(
+            BufferType::PluginConfiguration,
+            0,
+            configuration_size,
+        ) {
+            self.header_content = config_bytes.into_string().unwrap();
         }
         true
     }
