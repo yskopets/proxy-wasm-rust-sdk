@@ -96,12 +96,6 @@ pub trait Context {
     }
 }
 
-/// Represents a child context of the root context.
-pub enum ChildContext {
-    StreamContext(Box<dyn StreamContext>),
-    HttpContext(Box<dyn HttpContext>),
-}
-
 pub trait RootContext: Context {
     fn on_vm_start(&mut self, _vm_configuration_size: usize) -> bool {
         true
