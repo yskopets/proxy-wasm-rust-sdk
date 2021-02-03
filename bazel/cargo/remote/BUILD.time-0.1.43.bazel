@@ -30,23 +30,12 @@ licenses([
 
 # Generated Targets
 
-# Unsupported target "chrono" with type "bench" omitted
-
-# Unsupported target "serde" with type "bench" omitted
-
 rust_library(
-    name = "chrono",
+    name = "time",
     srcs = glob(["**/*.rs"]),
     aliases = {
     },
     crate_features = [
-        "clock",
-        "default",
-        "libc",
-        "oldtime",
-        "std",
-        "time",
-        "winapi",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
@@ -58,21 +47,11 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.4.19",
+    version = "0.1.43",
     # buildifier: leave-alone
     deps = [
         "@raze__libc__0_2_85//:libc",
-        "@raze__num_integer__0_1_44//:num_integer",
-        "@raze__num_traits__0_2_14//:num_traits",
-        "@raze__time__0_1_43//:time",
     ] + selects.with_or({
-        # cfg(all(target_arch = "wasm32", not(any(target_os = "emscripten", target_os = "wasi"))))
-        (
-            "@io_bazel_rules_rust//rust/platform:wasm32-unknown-unknown",
-        ): [
-        ],
-        "//conditions:default": [],
-    }) + selects.with_or({
         # cfg(windows)
         (
             "@io_bazel_rules_rust//rust/platform:i686-pc-windows-msvc",
@@ -83,5 +62,3 @@ rust_library(
         "//conditions:default": [],
     }),
 )
-
-# Unsupported target "wasm" with type "test" omitted

@@ -31,10 +31,8 @@ licenses([
 # Generated Targets
 
 rust_library(
-    name = "time",
+    name = "semver_parser",
     srcs = glob(["**/*.rs"]),
-    aliases = {
-    },
     crate_features = [
     ],
     crate_root = "src/lib.rs",
@@ -47,26 +45,8 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.1.44",
+    version = "0.9.0",
     # buildifier: leave-alone
     deps = [
-        "@raze__libc__0_2_81//:libc",
-    ] + selects.with_or({
-        # cfg(target_os = "wasi")
-        (
-            "@io_bazel_rules_rust//rust/platform:wasm32-wasi",
-        ): [
-            "@raze__wasi__0_10_0_wasi_snapshot_preview1//:wasi",
-        ],
-        "//conditions:default": [],
-    }) + selects.with_or({
-        # cfg(windows)
-        (
-            "@io_bazel_rules_rust//rust/platform:i686-pc-windows-msvc",
-            "@io_bazel_rules_rust//rust/platform:x86_64-pc-windows-msvc",
-        ): [
-            "@raze__winapi__0_3_9//:winapi",
-        ],
-        "//conditions:default": [],
-    }),
+    ],
 )

@@ -25,17 +25,13 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
+    "notice",  # MIT from expression "MIT"
 ])
 
 # Generated Targets
 
-# Unsupported target "ahash" with type "bench" omitted
-
-# Unsupported target "map" with type "bench" omitted
-
 rust_library(
-    name = "ahash",
+    name = "version_sync",
     srcs = glob(["**/*.rs"]),
     crate_features = [
     ],
@@ -49,14 +45,17 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.4.6",
+    version = "0.9.1",
     # buildifier: leave-alone
     deps = [
+        "@raze__proc_macro2__1_0_24//:proc_macro2",
+        "@raze__pulldown_cmark__0_7_2//:pulldown_cmark",
+        "@raze__regex__1_4_3//:regex",
+        "@raze__semver_parser__0_9_0//:semver_parser",
+        "@raze__syn__1_0_60//:syn",
+        "@raze__toml__0_5_8//:toml",
+        "@raze__url__2_2_0//:url",
     ],
 )
 
-# Unsupported target "bench" with type "test" omitted
-
-# Unsupported target "map_tests" with type "test" omitted
-
-# Unsupported target "nopanic" with type "test" omitted
+# Unsupported target "version-numbers" with type "test" omitted

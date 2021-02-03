@@ -25,24 +25,40 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+    "notice",  # MIT from expression "MIT OR Apache-2.0"
 ])
 
 # Generated Targets
 
-# Unsupported target "bench" with type "bench" omitted
+# Unsupported target "graphemes" with type "example" omitted
+
+# Unsupported target "graphemes-std" with type "example" omitted
+
+# Unsupported target "lines" with type "example" omitted
+
+# Unsupported target "lines-std" with type "example" omitted
+
+# Unsupported target "uppercase" with type "example" omitted
+
+# Unsupported target "uppercase-std" with type "example" omitted
+
+# Unsupported target "words" with type "example" omitted
+
+# Unsupported target "words-std" with type "example" omitted
 
 rust_library(
-    name = "hashbrown",
+    name = "bstr",
     srcs = glob(["**/*.rs"]),
     crate_features = [
-        "ahash",
         "default",
-        "inline-more",
+        "lazy_static",
+        "regex-automata",
+        "std",
+        "unicode",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
-    edition = "2018",
+    edition = "2015",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -50,17 +66,11 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.9.1",
+    version = "0.2.14",
     # buildifier: leave-alone
     deps = [
-        "@raze__ahash__0_4_7//:ahash",
+        "@raze__lazy_static__1_4_0//:lazy_static",
+        "@raze__memchr__2_3_4//:memchr",
+        "@raze__regex_automata__0_1_9//:regex_automata",
     ],
 )
-
-# Unsupported target "hasher" with type "test" omitted
-
-# Unsupported target "rayon" with type "test" omitted
-
-# Unsupported target "serde" with type "test" omitted
-
-# Unsupported target "set" with type "test" omitted
