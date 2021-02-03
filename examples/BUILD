@@ -7,7 +7,7 @@ rust_binary(
     edition = "2018",
     out_binary = True,
     deps = [
-        "//:proxy_wasm",
+        "//:proxy_wasm_experimental",
         "//bazel/cargo:cfg_if",
         "//bazel/cargo:chrono",
         "//bazel/cargo:log",
@@ -24,7 +24,7 @@ rust_binary(
     edition = "2018",
     out_binary = True,
     deps = [
-        "//:proxy_wasm",
+        "//:proxy_wasm_experimental",
         "//bazel/cargo:log",
     ],
 )
@@ -36,7 +36,7 @@ rust_binary(
     edition = "2018",
     out_binary = True,
     deps = [
-        "//:proxy_wasm",
+        "//:proxy_wasm_experimental",
         "//bazel/cargo:log",
     ],
 )
@@ -48,7 +48,7 @@ rust_binary(
     edition = "2018",
     out_binary = True,
     deps = [
-        "//:proxy_wasm",
+        "//:proxy_wasm_experimental",
         "//bazel/cargo:log",
     ],
 )
@@ -60,7 +60,7 @@ rust_binary(
     edition = "2018",
     out_binary = True,
     deps = [
-        "//:proxy_wasm",
+        "//:proxy_wasm_experimental",
         "//bazel/cargo:log",
     ],
 )
