@@ -197,8 +197,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Run cargo outdated
-        run: cargo outdated --root-deps-only --exit-code 1
+    - name: Run cargo outdated
+      run: cargo outdated --root-deps-only --exit-code 1
 
       - name: Check freshness of bazel/cargo/Cargo.lock
         run: |
