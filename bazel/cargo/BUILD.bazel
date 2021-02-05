@@ -65,12 +65,3 @@ alias(
         "manual",
     ],
 )
-
-alias(
-    name = "version_sync",
-    actual = "@raze__version_sync__0_9_1//:version_sync",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-)
