@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["HostCallError","An error to call a Host ABI function."],["HostResponseError","An error to parse the response from a Host ABI."]],"type":[["Error","A boxed [`Error`]."],["Result","A specialized [`Result`] type."]]});
+initSidebarItems({"struct":[["HostCallError","An error to call a Host ABI function."],["HostResponseError","An error to parse the response from a Host ABI."]],"type":[["Error","A boxed `Error`."],["Result","A specialized `Result` type."]]});
