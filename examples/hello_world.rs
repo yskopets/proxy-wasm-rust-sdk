@@ -14,11 +14,15 @@
 
 use proxy_wasm_experimental as proxy_wasm;
 
+use cfg_if::cfg_if;
 use chrono::{DateTime, Utc};
 use log::info;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use std::time::Duration;
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use getrandom::getrandom;
 
 #[no_mangle]
 pub fn _start() {
@@ -38,7 +42,17 @@ impl RootContext for HelloWorld {
     }
 
     fn on_tick(&mut self) {
-        let datetime: DateTime<Utc> = self.get_current_time().into();
-        info!("It's {}", datetime);
+        cfg_if! {
+            if #[cfg(all(target_arch = "wasm32", target_os = "unknown"))] {
+                let now: DateTime<Utc> = self.get_current_time().into();
+                info!("It's {}, there is no lucky number.", now);
+
+            } else {
+                let now: DateTime<Utc> = Utc::now();
+                let mut buf = [0u8; 1];
+                getrandom(&mut buf).unwrap();
+                info!("It's {}, your lucky number is {}.", now, buf[0]);
+            }
+        }
     }
 }
