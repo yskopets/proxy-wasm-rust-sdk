@@ -50,7 +50,7 @@ pub enum Status {
 }
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum ContextType {
     HttpContext = 0,
     StreamContext = 1,
@@ -99,7 +99,7 @@ pub enum StreamType {
 }
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum MetricType {
     Counter = 0,
     Gauge = 1,
