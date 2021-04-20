@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![doc(html_root_url = "https://docs.rs/proxy-wasm-experimental/0.0.8")]
+#![doc(html_root_url = "https://docs.rs/proxy-wasm-experimental/0.0.7")]
 
 pub mod error;
 pub mod hostcalls;
@@ -50,4 +50,4 @@ where
 }
 
 #[no_mangle]
-pub extern "C" fn proxy_abi_version_0_2_0() {}
+pub extern "C" fn proxy_abi_version_0_1_0() {}

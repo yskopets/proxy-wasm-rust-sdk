@@ -96,6 +96,12 @@ pub trait Context {
     }
 }
 
+/// Represents a child context of the root context.
+pub enum ChildContext {
+    StreamContext(Box<dyn StreamContext>),
+    HttpContext(Box<dyn HttpContext>),
+}
+
 pub trait RootContext: Context {
     fn on_vm_start(&mut self, _vm_configuration_size: usize) -> bool {
         true
@@ -115,15 +121,9 @@ pub trait RootContext: Context {
 
     fn on_log(&mut self) {}
 
-    fn create_http_context(&self, _context_id: u32) -> Option<Box<dyn HttpContext>> {
-        None
-    }
-
-    fn create_stream_context(&self, _context_id: u32) -> Option<Box<dyn StreamContext>> {
-        None
-    }
-
-    fn get_type(&self) -> Option<ContextType> {
+    fn on_create_child_context(&mut self, _context_id: u32) -> Option<ChildContext> {
+        // for the sake of compatibility with `set_http_context` and `set_stream_context` API,
+        // root context is not required to create its child context.
         None
     }
 }
@@ -141,10 +141,6 @@ pub trait StreamContext: Context {
         hostcalls::get_buffer(BufferType::DownstreamData, start, max_size).unwrap()
     }
 
-    fn set_downstream_data(&self, start: usize, size: usize, value: &[u8]) {
-        hostcalls::set_buffer(BufferType::DownstreamData, start, size, value).unwrap()
-    }
-
     fn on_downstream_close(&mut self, _peer_type: PeerType) {}
 
     fn on_upstream_data(&mut self, _data_size: usize, _end_of_stream: bool) -> Action {
@@ -153,10 +149,6 @@ pub trait StreamContext: Context {
 
     fn get_upstream_data(&self, start: usize, max_size: usize) -> Option<ByteString> {
         hostcalls::get_buffer(BufferType::UpstreamData, start, max_size).unwrap()
-    }
-
-    fn set_upstream_data(&self, start: usize, size: usize, value: &[u8]) {
-        hostcalls::set_buffer(BufferType::UpstreamData, start, size, value).unwrap()
     }
 
     fn on_upstream_close(&mut self, _peer_type: PeerType) {}
@@ -195,10 +187,6 @@ pub trait HttpContext: Context {
 
     fn get_http_request_body(&self, start: usize, max_size: usize) -> Option<ByteString> {
         hostcalls::get_buffer(BufferType::HttpRequestBody, start, max_size).unwrap()
-    }
-
-    fn set_http_request_body(&self, start: usize, size: usize, value: &[u8]) {
-        hostcalls::set_buffer(BufferType::HttpRequestBody, start, size, value).unwrap()
     }
 
     fn on_http_request_trailers(&mut self, _num_trailers: usize) -> Action {
@@ -259,10 +247,6 @@ pub trait HttpContext: Context {
 
     fn get_http_response_body(&self, start: usize, max_size: usize) -> Option<ByteString> {
         hostcalls::get_buffer(BufferType::HttpResponseBody, start, max_size).unwrap()
-    }
-
-    fn set_http_response_body(&self, start: usize, size: usize, value: &[u8]) {
-        hostcalls::set_buffer(BufferType::HttpResponseBody, start, size, value).unwrap()
     }
 
     fn on_http_response_trailers(&mut self, _num_trailers: usize) -> Action {
