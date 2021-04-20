@@ -6,15 +6,15 @@ DO NOT EDIT! Replaced on runs of cargo-raze
 """
 
 # buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
 load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:rust.bzl",
     "rust_binary",
     "rust_library",
     "rust_test",
 )
-
-# buildifier: disable=load
-load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
@@ -29,6 +29,35 @@ licenses([
 ])
 
 # Generated Targets
+# buildifier: disable=out-of-order-load
+# buildifier: disable=load-on-top
+load(
+    "@rules_rust//cargo:cargo_build_script.bzl",
+    "cargo_build_script",
+)
+
+cargo_build_script(
+    name = "pulldown_cmark_build_script",
+    srcs = glob(["**/*.rs"]),
+    build_script_env = {
+    },
+    crate_features = [
+    ],
+    crate_root = "build.rs",
+    data = glob(["**"]),
+    edition = "2018",
+    rustc_flags = [
+        "--cap-lints=allow",
+    ],
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+    version = "0.8.0",
+    visibility = ["//visibility:private"],
+    deps = [
+    ],
+)
 
 # Unsupported target "html_rendering" with type "bench" omitted
 
@@ -42,6 +71,7 @@ rust_binary(
     crate_features = [
     ],
     crate_root = "src/main.rs",
+    data = [],
     edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
@@ -50,18 +80,18 @@ rust_binary(
         "cargo-raze",
         "manual",
     ],
-    version = "0.7.2",
+    version = "0.8.0",
     # buildifier: leave-alone
     deps = [
-        # Binaries get an implicit dependency on their crate's lib
         ":pulldown_cmark",
+        ":pulldown_cmark_build_script",
         "@raze__bitflags__1_2_1//:bitflags",
         "@raze__memchr__2_3_4//:memchr",
         "@raze__unicase__2_6_0//:unicase",
     ],
 )
 
-# Unsupported target "build-script-build" with type "custom-build" omitted
+# Unsupported target "broken-link-callbacks" with type "example" omitted
 
 # Unsupported target "event-filter" with type "example" omitted
 
@@ -74,6 +104,7 @@ rust_library(
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
+    data = [],
     edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
@@ -82,9 +113,10 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.7.2",
+    version = "0.8.0",
     # buildifier: leave-alone
     deps = [
+        ":pulldown_cmark_build_script",
         "@raze__bitflags__1_2_1//:bitflags",
         "@raze__memchr__2_3_4//:memchr",
         "@raze__unicase__2_6_0//:unicase",

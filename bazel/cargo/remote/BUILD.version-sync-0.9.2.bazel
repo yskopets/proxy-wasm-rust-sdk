@@ -6,15 +6,15 @@ DO NOT EDIT! Replaced on runs of cargo-raze
 """
 
 # buildifier: disable=load
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+# buildifier: disable=load
 load(
-    "@io_bazel_rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:rust.bzl",
     "rust_binary",
     "rust_library",
     "rust_test",
 )
-
-# buildifier: disable=load
-load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = [
     # Public for visibility by "@raze__crate__version//" targets.
@@ -25,20 +25,20 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # MIT from expression "MIT OR Apache-2.0"
+    "notice",  # MIT from expression "MIT"
 ])
 
 # Generated Targets
 
 rust_library(
-    name = "unicode_bidi",
+    name = "version_sync",
     srcs = glob(["**/*.rs"]),
     crate_features = [
-        "default",
     ],
     crate_root = "src/lib.rs",
     crate_type = "lib",
-    edition = "2015",
+    data = [],
+    edition = "2018",
     rustc_flags = [
         "--cap-lints=allow",
     ],
@@ -46,9 +46,17 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.3.4",
+    version = "0.9.2",
     # buildifier: leave-alone
     deps = [
-        "@raze__matches__0_1_8//:matches",
+        "@raze__proc_macro2__1_0_26//:proc_macro2",
+        "@raze__pulldown_cmark__0_8_0//:pulldown_cmark",
+        "@raze__regex__1_4_3//:regex",
+        "@raze__semver_parser__0_9_0//:semver_parser",
+        "@raze__syn__1_0_60//:syn",
+        "@raze__toml__0_5_8//:toml",
+        "@raze__url__2_2_1//:url",
     ],
 )
+
+# Unsupported target "version-numbers" with type "test" omitted

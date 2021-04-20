@@ -97,8 +97,6 @@ cargo_build_script(
 
 # Unsupported target "mod" with type "bench" omitted
 
-# Unsupported target "build-script-build" with type "custom-build" omitted
-
 rust_library(
     name = "getrandom",
     srcs = glob(["**/*.rs"]),

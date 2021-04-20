@@ -66,6 +66,15 @@ alias(
     ],
 )
 
+alias(
+    name = "version_sync",
+    actual = "@raze__version_sync__0_9_2//:version_sync",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
 # Export file for Stardoc support
 exports_files(
     [
