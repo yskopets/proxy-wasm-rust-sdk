@@ -84,6 +84,17 @@ impl Dispatcher {
         self.new_http_stream.replace(Some(callback));
     }
 
+    fn register_callout(&self, token_id: u32) {
+        if self
+            .callouts
+            .borrow_mut()
+            .insert(token_id, self.active_id.get())
+            .is_some()
+        {
+            panic!("duplicate token_id")
+        }
+    }
+
     fn create_root_context(&self, context_id: u32) {
         let new_context = match *self.new_root.borrow_mut() {
             Some(ref mut f) => f(context_id),
@@ -99,44 +110,16 @@ impl Dispatcher {
         }
     }
 
-    /// Lets the root context to create its child context.
-    fn create_child_context(&self, context_id: u32, root_context_id: u32) -> bool {
-        if !self.roots.borrow().contains_key(&root_context_id) {
-            panic!("invalid root_context_id")
-        }
-        if let Some(child_context) = self
-            .roots
-            .borrow_mut()
-            .get_mut(&root_context_id)
-            .and_then(|root| root.on_create_child_context(context_id))
-        {
-            if match child_context {
-                ChildContext::HttpContext(http_context) => self
-                    .http_streams
-                    .borrow_mut()
-                    .insert(context_id, http_context)
-                    .is_some(),
-                ChildContext::StreamContext(stream_context) => self
-                    .streams
-                    .borrow_mut()
-                    .insert(context_id, stream_context)
-                    .is_some(),
-            } {
-                panic!("duplicate context_id")
-            }
-            true
-        } else {
-            false
-        }
-    }
-
     fn create_stream_context(&self, context_id: u32, root_context_id: u32) {
-        if !self.roots.borrow().contains_key(&root_context_id) {
-            panic!("invalid root_context_id")
-        }
-        let new_context = match *self.new_stream.borrow_mut() {
-            Some(ref mut f) => f(context_id, root_context_id),
-            None => panic!("missing constructor"),
+        let new_context = match self.roots.borrow().get(&root_context_id) {
+            Some(root_context) => match *self.new_stream.borrow_mut() {
+                Some(ref mut f) => f(context_id, root_context_id),
+                None => match root_context.create_stream_context(context_id) {
+                    Some(stream_context) => stream_context,
+                    None => panic!("create_stream_context returned None"),
+                },
+            },
+            None => panic!("invalid root_context_id"),
         };
         if self
             .streams
@@ -149,12 +132,15 @@ impl Dispatcher {
     }
 
     fn create_http_context(&self, context_id: u32, root_context_id: u32) {
-        if !self.roots.borrow().contains_key(&root_context_id) {
-            panic!("invalid root_context_id")
-        }
-        let new_context = match *self.new_http_stream.borrow_mut() {
-            Some(ref mut f) => f(context_id, root_context_id),
-            None => panic!("missing constructor"),
+        let new_context = match self.roots.borrow().get(&root_context_id) {
+            Some(root_context) => match *self.new_http_stream.borrow_mut() {
+                Some(ref mut f) => f(context_id, root_context_id),
+                None => match root_context.create_http_context(context_id) {
+                    Some(stream_context) => stream_context,
+                    None => panic!("create_http_context returned None"),
+                },
+            },
+            None => panic!("invalid root_context_id"),
         };
         if self
             .http_streams
@@ -166,28 +152,25 @@ impl Dispatcher {
         }
     }
 
-    fn register_callout(&self, token_id: u32) {
-        if self
-            .callouts
-            .borrow_mut()
-            .insert(token_id, self.active_id.get())
-            .is_some()
-        {
-            panic!("duplicate token_id")
-        }
-    }
-
     fn on_create_context(&self, context_id: u32, root_context_id: u32) {
         if root_context_id == 0 {
-            self.create_root_context(context_id)
-        } else if self.create_child_context(context_id, root_context_id) {
-            // root context created a child context by himself
+            self.create_root_context(context_id);
         } else if self.new_http_stream.borrow().is_some() {
             self.create_http_context(context_id, root_context_id);
         } else if self.new_stream.borrow().is_some() {
             self.create_stream_context(context_id, root_context_id);
+        } else if let Some(root_context) = self.roots.borrow().get(&root_context_id) {
+            match root_context.get_type() {
+                Some(ContextType::HttpContext) => {
+                    self.create_http_context(context_id, root_context_id)
+                }
+                Some(ContextType::StreamContext) => {
+                    self.create_stream_context(context_id, root_context_id)
+                }
+                None => panic!("missing ContextType on root_context"),
+            }
         } else {
-            panic!("missing constructors")
+            panic!("invalid root_context_id and missing constructors");
         }
     }
 
@@ -392,22 +375,24 @@ impl Dispatcher {
         body_size: usize,
         num_trailers: usize,
     ) {
-        if let Some(context_id) = self.callouts.borrow_mut().remove(&token_id) {
-            if let Some(http_stream) = self.http_streams.borrow_mut().get_mut(&context_id) {
-                self.active_id.set(context_id);
-                hostcalls::set_effective_context(context_id).unwrap();
-                http_stream.on_http_call_response(token_id, num_headers, body_size, num_trailers)
-            } else if let Some(stream) = self.streams.borrow_mut().get_mut(&context_id) {
-                self.active_id.set(context_id);
-                hostcalls::set_effective_context(context_id).unwrap();
-                stream.on_http_call_response(token_id, num_headers, body_size, num_trailers)
-            } else if let Some(root) = self.roots.borrow_mut().get_mut(&context_id) {
-                self.active_id.set(context_id);
-                hostcalls::set_effective_context(context_id).unwrap();
-                root.on_http_call_response(token_id, num_headers, body_size, num_trailers)
-            }
-        } else {
-            panic!("invalid token_id")
+        let context_id = self
+            .callouts
+            .borrow_mut()
+            .remove(&token_id)
+            .expect("invalid token_id");
+
+        if let Some(http_stream) = self.http_streams.borrow_mut().get_mut(&context_id) {
+            self.active_id.set(context_id);
+            hostcalls::set_effective_context(context_id).unwrap();
+            http_stream.on_http_call_response(token_id, num_headers, body_size, num_trailers)
+        } else if let Some(stream) = self.streams.borrow_mut().get_mut(&context_id) {
+            self.active_id.set(context_id);
+            hostcalls::set_effective_context(context_id).unwrap();
+            stream.on_http_call_response(token_id, num_headers, body_size, num_trailers)
+        } else if let Some(root) = self.roots.borrow_mut().get_mut(&context_id) {
+            self.active_id.set(context_id);
+            hostcalls::set_effective_context(context_id).unwrap();
+            root.on_http_call_response(token_id, num_headers, body_size, num_trailers)
         }
     }
 }

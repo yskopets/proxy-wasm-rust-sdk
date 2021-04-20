@@ -51,6 +51,13 @@ pub enum Status {
 
 #[repr(u32)]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum ContextType {
+    HttpContext = 0,
+    StreamContext = 1,
+}
+
+#[repr(u32)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum BufferType {
     HttpRequestBody = 0,
     HttpResponseBody = 1,
@@ -89,4 +96,12 @@ pub enum PeerType {
 pub enum StreamType {
     Request = 0,
     Response = 1,
+}
+
+#[repr(u32)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum MetricType {
+    Counter = 0,
+    Gauge = 1,
+    Histogram = 2,
 }

@@ -54,6 +54,10 @@ mod abi {
     pub const PROXY_HTTP_CALL: &str = "proxy_http_call";
     pub const PROXY_SET_EFFECTIVE_CONTEXT: &str = "proxy_set_effective_context";
     pub const PROXY_DONE: &str = "proxy_done";
+    pub const PROXY_DEFINE_METRIC: &str = "proxy_define_metric";
+    pub const PROXY_GET_METRIC: &str = "proxy_get_metric";
+    pub const PROXY_RECORD_METRIC: &str = "proxy_record_metric";
+    pub const PROXY_INCREMENT_METRIC: &str = "proxy_increment_metric";
 }
 
 extern "C" {
@@ -915,6 +919,65 @@ pub fn done() -> Result<()> {
         match proxy_done() {
             Status::Ok => Ok(()),
             status => Err(HostCallError::new(abi::PROXY_DONE, status).into()),
+        }
+    }
+}
+
+extern "C" {
+    fn proxy_define_metric(
+        metric_type: MetricType,
+        name_data: *const u8,
+        name_size: usize,
+        return_id: *mut u32,
+    ) -> Status;
+}
+
+pub fn define_metric(metric_type: MetricType, name: &str) -> Result<u32> {
+    let mut return_id: u32 = 0;
+    unsafe {
+        match proxy_define_metric(metric_type, name.as_ptr(), name.len(), &mut return_id) {
+            Status::Ok => Ok(return_id),
+            status => Err(HostCallError::new(abi::PROXY_DEFINE_METRIC, status).into()),
+        }
+    }
+}
+
+extern "C" {
+    fn proxy_get_metric(metric_id: u32, return_value: *mut u64) -> Status;
+}
+
+pub fn get_metric(metric_id: u32) -> Result<u64> {
+    let mut return_value: u64 = 0;
+    unsafe {
+        match proxy_get_metric(metric_id, &mut return_value) {
+            Status::Ok => Ok(return_value),
+            status => Err(HostCallError::new(abi::PROXY_GET_METRIC, status).into()),
+        }
+    }
+}
+
+extern "C" {
+    fn proxy_record_metric(metric_id: u32, value: u64) -> Status;
+}
+
+pub fn record_metric(metric_id: u32, value: u64) -> Result<()> {
+    unsafe {
+        match proxy_record_metric(metric_id, value) {
+            Status::Ok => Ok(()),
+            status => Err(HostCallError::new(abi::PROXY_RECORD_METRIC, status).into()),
+        }
+    }
+}
+
+extern "C" {
+    fn proxy_increment_metric(metric_id: u32, offset: i64) -> Status;
+}
+
+pub fn increment_metric(metric_id: u32, offset: i64) -> Result<()> {
+    unsafe {
+        match proxy_increment_metric(metric_id, offset) {
+            Status::Ok => Ok(()),
+            status => Err(HostCallError::new(abi::PROXY_INCREMENT_METRIC, status).into()),
         }
     }
 }
