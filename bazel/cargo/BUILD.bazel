@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "bstr",
-    actual = "@raze__bstr__0_2_14//:bstr",
+    actual = "@raze__bstr__0_2_15//:bstr",
     tags = [
         "cargo-raze",
         "manual",
@@ -60,6 +60,15 @@ alias(
 alias(
     name = "log",
     actual = "@raze__log__0_4_14//:log",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "version_sync",
+    actual = "@raze__version_sync__0_9_2//:version_sync",
     tags = [
         "cargo-raze",
         "manual",
