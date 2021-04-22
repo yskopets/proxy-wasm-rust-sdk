@@ -37,7 +37,7 @@ load(
 )
 
 cargo_build_script(
-    name = "getrandom_build_script",
+    name = "ahash_build_script",
     srcs = glob(["**/*.rs"]),
     build_script_env = {
     },
@@ -53,25 +53,12 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "0.2.2",
+    version = "0.7.2",
     visibility = ["//visibility:private"],
     deps = [
+        "@raze__version_check__0_9_3//:version_check",
     ] + selects.with_or({
-        # cfg(all(target_arch = "wasm32", target_os = "unknown"))
-        (
-            "@rules_rust//rust/platform:wasm32-unknown-unknown",
-        ): [
-        ],
-        "//conditions:default": [],
-    }) + selects.with_or({
-        # cfg(target_os = "wasi")
-        (
-            "@rules_rust//rust/platform:wasm32-wasi",
-        ): [
-        ],
-        "//conditions:default": [],
-    }) + selects.with_or({
-        # cfg(unix)
+        # cfg(any(target_os = "linux", target_os = "android", target_os = "windows", target_os = "macos", target_os = "ios", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "dragonfly", target_os = "solaris", target_os = "illumos", target_os = "fuchsia", target_os = "redox", target_os = "cloudabi", target_os = "haiku", target_os = "vxworks", target_os = "emscripten", target_os = "wasi"))
         (
             "@rules_rust//rust/platform:aarch64-apple-darwin",
             "@rules_rust//rust/platform:aarch64-apple-ios",
@@ -80,25 +67,37 @@ cargo_build_script(
             "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
             "@rules_rust//rust/platform:i686-apple-darwin",
             "@rules_rust//rust/platform:i686-linux-android",
+            "@rules_rust//rust/platform:i686-pc-windows-msvc",
             "@rules_rust//rust/platform:i686-unknown-freebsd",
             "@rules_rust//rust/platform:i686-unknown-linux-gnu",
             "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
             "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
+            "@rules_rust//rust/platform:wasm32-wasi",
             "@rules_rust//rust/platform:x86_64-apple-darwin",
             "@rules_rust//rust/platform:x86_64-apple-ios",
             "@rules_rust//rust/platform:x86_64-linux-android",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
             "@rules_rust//rust/platform:x86_64-unknown-freebsd",
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
+        ): [
+        ],
+        "//conditions:default": [],
+    }) + selects.with_or({
+        # cfg(not(any(target_os = "linux", target_os = "android", target_os = "windows", target_os = "macos", target_os = "ios", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "dragonfly", target_os = "solaris", target_os = "illumos", target_os = "fuchsia", target_os = "redox", target_os = "cloudabi", target_os = "haiku", target_os = "vxworks", target_os = "emscripten", target_os = "wasi")))
+        (
+            "@rules_rust//rust/platform:wasm32-unknown-unknown",
         ): [
         ],
         "//conditions:default": [],
     }),
 )
 
-# Unsupported target "mod" with type "bench" omitted
+# Unsupported target "ahash" with type "bench" omitted
+
+# Unsupported target "map" with type "bench" omitted
 
 rust_library(
-    name = "getrandom",
+    name = "ahash",
     srcs = glob(["**/*.rs"]),
     aliases = {
     },
@@ -115,28 +114,12 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.2.2",
+    version = "0.7.2",
     # buildifier: leave-alone
     deps = [
-        ":getrandom_build_script",
-        "@raze__cfg_if__1_0_0//:cfg_if",
+        ":ahash_build_script",
     ] + selects.with_or({
-        # cfg(all(target_arch = "wasm32", target_os = "unknown"))
-        (
-            "@rules_rust//rust/platform:wasm32-unknown-unknown",
-        ): [
-        ],
-        "//conditions:default": [],
-    }) + selects.with_or({
-        # cfg(target_os = "wasi")
-        (
-            "@rules_rust//rust/platform:wasm32-wasi",
-        ): [
-            "@raze__wasi__0_10_2_wasi_snapshot_preview1//:wasi",
-        ],
-        "//conditions:default": [],
-    }) + selects.with_or({
-        # cfg(unix)
+        # cfg(any(target_os = "linux", target_os = "android", target_os = "windows", target_os = "macos", target_os = "ios", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "dragonfly", target_os = "solaris", target_os = "illumos", target_os = "fuchsia", target_os = "redox", target_os = "cloudabi", target_os = "haiku", target_os = "vxworks", target_os = "emscripten", target_os = "wasi"))
         (
             "@rules_rust//rust/platform:aarch64-apple-darwin",
             "@rules_rust//rust/platform:aarch64-apple-ios",
@@ -145,24 +128,35 @@ rust_library(
             "@rules_rust//rust/platform:arm-unknown-linux-gnueabi",
             "@rules_rust//rust/platform:i686-apple-darwin",
             "@rules_rust//rust/platform:i686-linux-android",
+            "@rules_rust//rust/platform:i686-pc-windows-msvc",
             "@rules_rust//rust/platform:i686-unknown-freebsd",
             "@rules_rust//rust/platform:i686-unknown-linux-gnu",
             "@rules_rust//rust/platform:powerpc-unknown-linux-gnu",
             "@rules_rust//rust/platform:s390x-unknown-linux-gnu",
+            "@rules_rust//rust/platform:wasm32-wasi",
             "@rules_rust//rust/platform:x86_64-apple-darwin",
             "@rules_rust//rust/platform:x86_64-apple-ios",
             "@rules_rust//rust/platform:x86_64-linux-android",
+            "@rules_rust//rust/platform:x86_64-pc-windows-msvc",
             "@rules_rust//rust/platform:x86_64-unknown-freebsd",
             "@rules_rust//rust/platform:x86_64-unknown-linux-gnu",
         ): [
-            "@raze__libc__0_2_93//:libc",
+            "@raze__getrandom__0_2_2//:getrandom",
+            "@raze__once_cell__1_7_2//:once_cell",
+        ],
+        "//conditions:default": [],
+    }) + selects.with_or({
+        # cfg(not(any(target_os = "linux", target_os = "android", target_os = "windows", target_os = "macos", target_os = "ios", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "dragonfly", target_os = "solaris", target_os = "illumos", target_os = "fuchsia", target_os = "redox", target_os = "cloudabi", target_os = "haiku", target_os = "vxworks", target_os = "emscripten", target_os = "wasi")))
+        (
+            "@rules_rust//rust/platform:wasm32-unknown-unknown",
+        ): [
         ],
         "//conditions:default": [],
     }),
 )
 
-# Unsupported target "custom" with type "test" omitted
+# Unsupported target "bench" with type "test" omitted
 
-# Unsupported target "normal" with type "test" omitted
+# Unsupported target "map_tests" with type "test" omitted
 
-# Unsupported target "rdrand" with type "test" omitted
+# Unsupported target "nopanic" with type "test" omitted
